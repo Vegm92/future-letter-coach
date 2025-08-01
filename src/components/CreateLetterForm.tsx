@@ -23,15 +23,17 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     send_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
   });
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [enhancedGoal, setEnhancedGoal] = useState('');
+  const [enhancedLetter, setEnhancedLetter] = useState<{title: string, goal: string, content: string} | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const handleEnhanceGoal = async () => {
-    if (!formData.goal.trim()) {
+  const handleEnhanceLetter = async () => {
+    const hasContent = formData.title.trim() || formData.goal.trim() || formData.content.trim();
+    if (!hasContent) {
       toast({
-        title: "Please enter a goal first",
+        title: "Please enter some content first",
+        description: "Fill in at least one field to enhance your letter.",
         variant: "destructive",
       });
       return;
@@ -39,19 +41,23 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
 
     setIsEnhancing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('enhance-goal', {
-        body: { goal: formData.goal }
+      const { data, error } = await supabase.functions.invoke('enhance-letter', {
+        body: { 
+          title: formData.title,
+          goal: formData.goal,
+          content: formData.content
+        }
       });
 
       if (error) throw error;
       
-      setEnhancedGoal(data.enhancedGoal);
+      setEnhancedLetter(data.enhancedLetter);
       toast({
-        title: "Goal enhanced!",
-        description: "AI has made your goal more specific and inspiring.",
+        title: "Letter enhanced!",
+        description: "AI has improved your letter with better structure and clarity.",
       });
     } catch (error) {
-      console.error('Error enhancing goal:', error);
+      console.error('Error enhancing letter:', error);
       toast({
         title: "Enhancement failed",
         description: "Please try again or continue without enhancement.",
@@ -59,6 +65,22 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
       });
     } finally {
       setIsEnhancing(false);
+    }
+  };
+
+  const applyEnhancedLetter = () => {
+    if (enhancedLetter) {
+      setFormData({
+        ...formData,
+        title: enhancedLetter.title,
+        goal: enhancedLetter.goal,
+        content: enhancedLetter.content,
+      });
+      setEnhancedLetter(null);
+      toast({
+        title: "Enhanced content applied!",
+        description: "Your letter has been updated with the AI suggestions.",
+      });
     }
   };
 
@@ -82,7 +104,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         title: formData.title,
         content: formData.content,
         goal: formData.goal,
-        ai_enhanced_goal: enhancedGoal || null,
+        ai_enhanced_goal: enhancedLetter ? JSON.stringify(enhancedLetter) : null,
         send_date: formData.send_date,
         status: 'scheduled'
       });
@@ -158,37 +180,14 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="goal">Your Goal *</Label>
-              <div className="flex space-x-2">
-                <Textarea
-                  id="goal"
-                  placeholder="Describe what you want to achieve..."
-                  value={formData.goal}
-                  onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
-                  className="min-h-[80px]"
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEnhanceGoal}
-                  disabled={isEnhancing || !formData.goal.trim()}
-                  className="shrink-0"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
-                </Button>
-              </div>
-              
-              {enhancedGoal && (
-                <div className="p-3 bg-accent/50 rounded-md border border-primary/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <Badge variant="secondary">AI Enhanced</Badge>
-                  </div>
-                  <p className="text-sm">{enhancedGoal}</p>
-                </div>
-              )}
+              <Textarea
+                id="goal"
+                placeholder="Describe what you want to achieve..."
+                value={formData.goal}
+                onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
+                className="min-h-[80px]"
+                required
+              />
             </div>
 
             <div className="space-y-2">
@@ -201,6 +200,73 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                 className="min-h-[150px]"
                 required
               />
+            </div>
+
+            {/* AI Enhancement Section */}
+            <div className="p-4 bg-gradient-to-r from-primary/5 to-primary-glow/5 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span className="font-medium">AI Enhancement</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleEnhanceLetter}
+                  disabled={isEnhancing}
+                  className="shrink-0"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {isEnhancing ? 'Enhancing...' : 'Enhance Letter'}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Let AI improve your letter's clarity, structure, and emotional impact.
+              </p>
+              
+              {enhancedLetter && (
+                <div className="mt-4 p-4 bg-background rounded-md border">
+                  <div className="flex items-center justify-between mb-3">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      AI Enhanced Version
+                    </Badge>
+                    <div className="space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEnhancedLetter(null)}
+                      >
+                        Dismiss
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={applyEnhancedLetter}
+                      >
+                        Apply Changes
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">Enhanced Title:</Label>
+                      <p className="mt-1 p-2 bg-accent/30 rounded border-l-2 border-primary/50">{enhancedLetter.title}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">Enhanced Goal:</Label>
+                      <p className="mt-1 p-2 bg-accent/30 rounded border-l-2 border-primary/50">{enhancedLetter.goal}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-muted-foreground">Enhanced Content:</Label>
+                      <p className="mt-1 p-2 bg-accent/30 rounded border-l-2 border-primary/50 whitespace-pre-wrap">{enhancedLetter.content}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">

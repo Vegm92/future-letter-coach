@@ -33,7 +33,14 @@ const AuthenticatedLayout = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for custom create form events
+    const handleOpenCreateForm = () => setShowCreateForm(true);
+    window.addEventListener('openCreateForm', handleOpenCreateForm);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('openCreateForm', handleOpenCreateForm);
+    };
   }, [navigate]);
 
   const handleCreateSuccess = () => {
