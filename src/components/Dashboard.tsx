@@ -111,119 +111,115 @@ const Dashboard = ({ onCreateClick, onViewAllLetters }: DashboardProps) => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-8 p-6">
       {/* Welcome Section */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
           Track your progress and manage your future letters
         </p>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="hover-scale">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Archive className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Letters</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
+      {/* Compact Stats Overview */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-card border rounded-lg p-4 hover-scale">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total</p>
+              <p className="text-xl font-bold">{stats.total}</p>
             </div>
-          </CardContent>
-        </Card>
+            <Archive className="h-4 w-4 text-primary opacity-60" />
+          </div>
+        </div>
         
-        <Card className="hover-scale">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-warning" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Scheduled</p>
-                <p className="text-2xl font-bold">{stats.scheduled}</p>
-              </div>
+        <div className="bg-card border rounded-lg p-4 hover-scale">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Scheduled</p>
+              <p className="text-xl font-bold">{stats.scheduled}</p>
             </div>
-          </CardContent>
-        </Card>
+            <Clock className="h-4 w-4 text-warning opacity-60" />
+          </div>
+        </div>
         
-        <Card className="hover-scale">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-success" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Delivered</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-              </div>
+        <div className="bg-card border rounded-lg p-4 hover-scale">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivered</p>
+              <p className="text-xl font-bold">{stats.completed}</p>
             </div>
-          </CardContent>
-        </Card>
+            <CheckCircle className="h-4 w-4 text-success opacity-60" />
+          </div>
+        </div>
         
-        <Card className="hover-scale">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overall Progress</p>
-                <p className="text-2xl font-bold">{stats.overallProgress}%</p>
-              </div>
+        <div className="bg-card border rounded-lg p-4 hover-scale">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Progress</p>
+              <p className="text-xl font-bold">{stats.overallProgress}%</p>
             </div>
-            <Progress value={stats.overallProgress} className="mt-2" />
-          </CardContent>
-        </Card>
+            <TrendingUp className="h-4 w-4 text-primary opacity-60" />
+          </div>
+          {stats.overallProgress > 0 && (
+            <Progress value={stats.overallProgress} className="mt-2 h-1.5" />
+          )}
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions - Smaller */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
+              <Target className="h-4 w-4" />
               <span>Quick Actions</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <Button onClick={onCreateClick} className="w-full" variant="hero">
+          <CardContent className="space-y-3">
+            <Button onClick={onCreateClick} className="w-full" variant="hero" size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Create New Letter
+              Create Letter
             </Button>
-            <Button onClick={onViewAllLetters} variant="outline" className="w-full">
+            <Button onClick={onViewAllLetters} variant="outline" className="w-full" size="sm">
               <Archive className="h-4 w-4 mr-2" />
-              View All Letters
-              <ArrowRight className="h-4 w-4 ml-auto" />
+              View All
+              <ArrowRight className="h-3 w-3 ml-auto" />
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5" />
+        {/* Recent Letters - Larger */}
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-base">
+              <Calendar className="h-4 w-4" />
               <span>Recent Letters</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {recentLetters.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="h-8 w-8 mx-auto mb-2" />
-                <p>No letters yet</p>
-                <p className="text-sm">Create your first letter to get started</p>
+              <div className="text-center py-6 text-muted-foreground">
+                <Target className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No letters yet</p>
+                <p className="text-xs">Create your first letter to get started</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {recentLetters.map((letter) => (
                   <div
                     key={letter.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{letter.title}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium truncate text-sm">{letter.title}</p>
+                      <p className="text-xs text-muted-foreground">
                         {new Date(letter.send_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
+                        className={`px-2 py-0.5 text-xs rounded-full font-medium ${
                           letter.status === 'sent'
                             ? 'bg-success/10 text-success'
                             : letter.status === 'scheduled'

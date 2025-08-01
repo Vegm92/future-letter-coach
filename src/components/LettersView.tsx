@@ -184,13 +184,13 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Your Letters</h1>
-          <p className="text-muted-foreground">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold">Your Letters</h1>
+          <p className="text-sm text-muted-foreground">
             Manage and track all your future letters
           </p>
         </div>
-        <Button onClick={onCreateClick} variant="hero">
+        <Button onClick={onCreateClick} variant="hero" size="sm">
           <Plus className="h-4 w-4 mr-2" />
           New Letter
         </Button>
