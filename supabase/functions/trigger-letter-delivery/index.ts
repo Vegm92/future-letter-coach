@@ -75,39 +75,103 @@ const handler = async (req: Request): Promise<Response> => {
           to: [user.email],
           subject: `Letter: ${letter.title}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h1 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">
-                Your Vision Vault Letter: ${letter.title}
-              </h1>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Your FutureLetter AI</title>
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
               
-              <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px;">
-                <h2 style="color: #666; margin-top: 0;">Your Goal:</h2>
-                <p style="font-size: 16px; line-height: 1.6; color: #333;">${letter.ai_enhanced_goal || letter.goal}</p>
-              </div>
-              
-              <div style="margin: 20px 0;">
-                <h2 style="color: #666;">Your Letter:</h2>
-                <div style="background: white; padding: 20px; border-left: 4px solid #4F46E5; margin: 10px 0;">
-                  ${letter.content.replace(/\n/g, '<br>')}
+              <!-- Email Container -->
+              <div style="max-width: 600px; margin: 0 auto; background: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                  <div style="display: inline-flex; align-items: center; margin-bottom: 20px;">
+                    <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                        <path d="M2 2l7.586 7.586"></path>
+                        <circle cx="11" cy="11" r="2"></circle>
+                      </svg>
+                    </div>
+                    <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                      FutureLetter AI
+                    </h1>
+                  </div>
+                  <p style="margin: 0; color: rgba(255,255,255,0.9); font-size: 16px; font-weight: 400;">
+                    A letter from your past self has arrived
+                  </p>
                 </div>
+                
+                <!-- Main Content -->
+                <div style="padding: 40px 30px;">
+                  
+                  <!-- Letter Title -->
+                  <div style="text-align: center; margin-bottom: 40px;">
+                    <h2 style="margin: 0 0 10px 0; color: #1a1a1a; font-size: 24px; font-weight: 600; line-height: 1.3;">
+                      ${letter.title}
+                    </h2>
+                    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                      Delivered on ${new Date(letter.send_date).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                  
+                  <!-- Goal Section -->
+                  <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 16px;">
+                      <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 6l-2 6h4l-2 6"></path>
+                        </svg>
+                      </div>
+                      <h3 style="margin: 0; color: #374151; font-size: 18px; font-weight: 600;">Your Goal</h3>
+                    </div>
+                    <p style="margin: 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
+                      ${letter.ai_enhanced_goal || letter.goal}
+                    </p>
+                  </div>
+                  
+                  <!-- Letter Content -->
+                  <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="position: absolute; top: -1px; left: -1px; right: -1px; height: 4px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px 12px 0 0;"></div>
+                    <h3 style="margin: 0 0 16px 0; color: #374151; font-size: 18px; font-weight: 600;">Your Message</h3>
+                    <div style="color: #4b5563; font-size: 16px; line-height: 1.7; white-space: pre-wrap;">
+                      ${letter.content}
+                    </div>
+                  </div>
+                  
+                  <!-- Reflection Prompt -->
+                  <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 12px; padding: 20px; margin-top: 30px; text-align: center;">
+                    <p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 500;">
+                      💭 Take a moment to reflect: How far have you come since writing this letter?
+                    </p>
+                  </div>
+                  
+                </div>
+                
+                <!-- Footer -->
+                <div style="background: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                    Delivered with care by <strong style="color: #4f46e5;">FutureLetter AI</strong>
+                  </p>
+                  <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                    Helping you bridge the gap between dreams and reality
+                  </p>
+                </div>
+                
               </div>
               
-              <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p style="margin: 0; color: #666; font-size: 14px;">
-                  <strong>Scheduled for:</strong> ${new Date(letter.send_date).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </p>
-              </div>
-              
-              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #999; font-size: 12px;">
-                  This letter was sent to you by Vision Vault - helping you achieve your future goals.
-                </p>
-              </div>
-            </div>
+            </body>
+            </html>
           `,
         };
         

@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import HeroSection from "@/components/HeroSection";
 import AuthForm from "@/components/AuthForm";
-import Header from "@/components/Header";
-import VisionVault from "@/components/VisionVault";
+import { AppSidebar } from "@/components/AppSidebar";
+import Dashboard from "@/components/Dashboard";
+import LettersView from "@/components/LettersView";
 import CreateLetterForm from "@/components/CreateLetterForm";
 
 const Index = () => {
@@ -12,6 +14,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'letters'>('dashboard');
 
   useEffect(() => {
     // Get initial session
@@ -41,8 +44,8 @@ const Index = () => {
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
-    // Refresh the vault to show new letter
-    window.location.reload();
+    setCurrentView('letters');
+    // Refresh will happen automatically in the LettersView component
   };
 
   if (loading) {
@@ -59,19 +62,39 @@ const Index = () => {
 
   if (user) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header user={user} onCreateClick={() => setShowCreateForm(true)} />
-        <main className="container mx-auto px-4 py-8">
-          <VisionVault onCreateClick={() => setShowCreateForm(true)} />
-        </main>
-        
-        {showCreateForm && (
-          <CreateLetterForm
-            onClose={() => setShowCreateForm(false)}
-            onSuccess={handleCreateSuccess}
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full bg-background">
+          <AppSidebar 
+            user={user} 
+            onCreateClick={() => setShowCreateForm(true)} 
           />
-        )}
-      </div>
+          
+          <div className="flex-1 flex flex-col">
+            <header className="h-12 flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
+              <SidebarTrigger className="ml-4" />
+              <div className="flex-1" />
+            </header>
+            
+            <main className="flex-1 overflow-auto">
+              {currentView === 'dashboard' ? (
+                <Dashboard 
+                  onCreateClick={() => setShowCreateForm(true)}
+                  onViewAllLetters={() => setCurrentView('letters')}
+                />
+              ) : (
+                <LettersView onCreateClick={() => setShowCreateForm(true)} />
+              )}
+            </main>
+          </div>
+          
+          {showCreateForm && (
+            <CreateLetterForm
+              onClose={() => setShowCreateForm(false)}
+              onSuccess={handleCreateSuccess}
+            />
+          )}
+        </div>
+      </SidebarProvider>
     );
   }
 
