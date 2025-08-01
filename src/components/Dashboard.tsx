@@ -121,47 +121,47 @@ const Dashboard = ({ onCreateClick, onViewAllLetters }: DashboardProps) => {
       </div>
 
       {/* Compact Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-card border rounded-lg p-4 hover-scale">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="bg-card border rounded-md p-3 hover-scale">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total</p>
-              <p className="text-xl font-bold">{stats.total}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Total</p>
+              <p className="text-lg font-bold">{stats.total}</p>
             </div>
-            <Archive className="h-4 w-4 text-primary opacity-60" />
+            <Archive className="h-3.5 w-3.5 text-primary opacity-50" />
           </div>
         </div>
         
-        <div className="bg-card border rounded-lg p-4 hover-scale">
+        <div className="bg-card border rounded-md p-3 hover-scale">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Scheduled</p>
-              <p className="text-xl font-bold">{stats.scheduled}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Scheduled</p>
+              <p className="text-lg font-bold">{stats.scheduled}</p>
             </div>
-            <Clock className="h-4 w-4 text-warning opacity-60" />
+            <Clock className="h-3.5 w-3.5 text-warning opacity-50" />
           </div>
         </div>
         
-        <div className="bg-card border rounded-lg p-4 hover-scale">
+        <div className="bg-card border rounded-md p-3 hover-scale">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivered</p>
-              <p className="text-xl font-bold">{stats.completed}</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Delivered</p>
+              <p className="text-lg font-bold">{stats.completed}</p>
             </div>
-            <CheckCircle className="h-4 w-4 text-success opacity-60" />
+            <CheckCircle className="h-3.5 w-3.5 text-success opacity-50" />
           </div>
         </div>
         
-        <div className="bg-card border rounded-lg p-4 hover-scale">
+        <div className="bg-card border rounded-md p-3 hover-scale">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Progress</p>
-              <p className="text-xl font-bold">{stats.overallProgress}%</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Progress</p>
+              <p className="text-lg font-bold">{stats.overallProgress}%</p>
             </div>
-            <TrendingUp className="h-4 w-4 text-primary opacity-60" />
+            <TrendingUp className="h-3.5 w-3.5 text-primary opacity-50" />
           </div>
           {stats.overallProgress > 0 && (
-            <Progress value={stats.overallProgress} className="mt-2 h-1.5" />
+            <Progress value={stats.overallProgress} className="mt-1.5 h-1" />
           )}
         </div>
       </div>
