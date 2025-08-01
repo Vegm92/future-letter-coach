@@ -1,1 +1,4 @@
 project_id = "uzobpcqhwdreeltvdusc"
+
+[functions.enhance-goal]
+verify_jwt = false
