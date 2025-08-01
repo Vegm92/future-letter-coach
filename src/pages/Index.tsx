@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
 import AuthForm from "@/components/AuthForm";
 import { AppSidebar } from "@/components/AppSidebar";
 import Dashboard from "@/components/Dashboard";
-import LettersView from "@/components/LettersView";
 import CreateLetterForm from "@/components/CreateLetterForm";
 
 const Index = () => {
@@ -14,7 +14,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [showAuth, setShowAuth] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'letters'>('dashboard');
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get initial session
@@ -44,8 +44,7 @@ const Index = () => {
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
-    setCurrentView('letters');
-    // Refresh will happen automatically in the LettersView component
+    navigate('/letters');
   };
 
   if (loading) {
@@ -76,14 +75,10 @@ const Index = () => {
             </header>
             
             <main className="flex-1 overflow-auto">
-              {currentView === 'dashboard' ? (
-                <Dashboard 
-                  onCreateClick={() => setShowCreateForm(true)}
-                  onViewAllLetters={() => setCurrentView('letters')}
-                />
-              ) : (
-                <LettersView onCreateClick={() => setShowCreateForm(true)} />
-              )}
+              <Dashboard 
+                onCreateClick={() => setShowCreateForm(true)}
+                onViewAllLetters={() => navigate('/letters')}
+              />
             </main>
           </div>
           
