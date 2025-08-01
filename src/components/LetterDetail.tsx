@@ -9,7 +9,9 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, Target, Clock, Edit, X, Save, Play } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import MilestoneManager from "./MilestoneManager";
 
 interface Letter {
   id: string;
@@ -103,40 +105,10 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
     }
   };
 
-  const toggleMilestone = async (milestoneId: string, completed: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('milestones')
-        .update({ 
-          completed,
-          completed_at: completed ? new Date().toISOString() : null
-        })
-        .eq('id', milestoneId);
-
-      if (error) throw error;
-
-      const updatedMilestones = letter.milestones?.map(m => 
-        m.id === milestoneId ? { ...m, completed } : m
-      ) || [];
-
-      onUpdate({ ...letter, milestones: updatedMilestones });
-      
-      toast({
-        title: completed ? "Milestone completed!" : "Milestone reopened",
-        description: completed ? "Great progress on your goal!" : "Milestone marked as incomplete.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error updating milestone",
-        description: "Failed to update milestone. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <DialogTitle className="text-2xl font-bold leading-tight pr-4">
@@ -209,7 +181,7 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
           {/* Progress Section */}
           {letter.milestones && letter.milestones.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3">Progress Tracking</h3>
+              <h3 className="text-lg font-semibold mb-3">Progress Overview</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Overall Progress</span>
@@ -220,32 +192,20 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
                   variant={overallProgress === 100 ? "success" : "primary"}
                   className="h-3"
                 />
-                
-                <div className="space-y-2">
-                  {letter.milestones.map((milestone) => (
-                    <div key={milestone.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-md">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          checked={milestone.completed}
-                          onChange={(e) => toggleMilestone(milestone.id, e.target.checked)}
-                          className="h-4 w-4 rounded border-border"
-                        />
-                        <div>
-                          <p className={`text-sm font-medium ${milestone.completed ? 'line-through text-muted-foreground' : ''}`}>
-                            {milestone.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Target: {format(parseISO(milestone.target_date), 'MMM d, yyyy')} • {milestone.percentage}%
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
+
+          {/* Milestone Management */}
+          <div>
+            <MilestoneManager
+              letterId={letter.id}
+              milestones={letter.milestones || []}
+              onUpdate={(updatedMilestones) => {
+                onUpdate({ ...letter, milestones: updatedMilestones });
+              }}
+            />
+          </div>
 
           {/* Letter Content */}
           <div>

@@ -63,7 +63,7 @@ const LetterCard = ({ letter, onEdit, onPlay, onView }: LetterCardProps) => {
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30 cursor-pointer"
+      className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30 cursor-pointer animate-fade-in"
       onClick={() => onView(letter)}
     >
       <CardHeader className="pb-3">
