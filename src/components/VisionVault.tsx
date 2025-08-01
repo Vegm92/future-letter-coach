@@ -129,6 +129,58 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
     });
   };
 
+  const handleTriggerDelivery = async (letter: any) => {
+    try {
+      // Create notification record
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: letter.user_id,
+          letter_id: letter.id,
+          type: letter.status === 'draft' ? 'schedule' : 'delivery',
+          subject: `Letter: ${letter.title}`,
+          content: letter.status === 'draft' 
+            ? `Your letter "${letter.title}" has been scheduled for delivery`
+            : `Your letter "${letter.title}" has been sent`,
+          scheduled_for: new Date().toISOString(),
+          delivery_method: 'email'
+        });
+
+      if (notificationError) throw notificationError;
+
+      // Update letter status
+      const newStatus = letter.status === 'draft' ? 'scheduled' : 'sent';
+      const { error: updateError } = await supabase
+        .from('letters')
+        .update({ status: newStatus })
+        .eq('id', letter.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setLetters(letters.map(l => 
+        l.id === letter.id ? { ...l, status: newStatus } : l
+      ));
+
+      toast({
+        title: letter.status === 'draft' ? "Letter Scheduled" : "Letter Sent",
+        description: letter.status === 'draft' 
+          ? `"${letter.title}" has been scheduled for delivery`
+          : `"${letter.title}" has been sent successfully`,
+      });
+
+      // Refresh stats
+      fetchLetters();
+    } catch (error) {
+      console.error('Error triggering delivery:', error);
+      toast({
+        title: "Failed to process request",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filterLetters = (status?: string) => {
     if (!status) return letters;
     return letters.filter(letter => letter.status === status);
@@ -247,6 +299,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                     onEdit={handleEditLetter}
                     onView={handleViewLetter}
                     onPlay={handlePlayVoiceMemo}
+                    onTriggerDelivery={handleTriggerDelivery}
                   />
                 ))}
               </div>
@@ -262,6 +315,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   onEdit={handleEditLetter}
                   onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
+                  onTriggerDelivery={handleTriggerDelivery}
                 />
               ))}
             </div>
@@ -276,6 +330,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   onEdit={handleEditLetter}
                   onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
+                  onTriggerDelivery={handleTriggerDelivery}
                 />
               ))}
             </div>
@@ -290,6 +345,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                       onEdit={handleEditLetter}
                       onView={handleViewLetter}
                       onPlay={handlePlayVoiceMemo}
+                      onTriggerDelivery={handleTriggerDelivery}
                     />
               ))}
             </div>

@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Calendar, Target, Clock, Edit, Play, Pause } from "lucide-react";
+import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 
 interface Letter {
@@ -33,9 +33,10 @@ interface LetterCardProps {
   onEdit: (letter: Letter) => void;
   onPlay?: (url: string) => void;
   onView: (letter: Letter) => void;
+  onTriggerDelivery?: (letter: Letter) => void;
 }
 
-const LetterCard = ({ letter, onEdit, onPlay, onView }: LetterCardProps) => {
+const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery }: LetterCardProps) => {
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
   const overallProgress = letter.milestones 
     ? Math.round((letter.milestones.filter(m => m.completed).length / letter.milestones.length) * 100)
@@ -58,6 +59,22 @@ const LetterCard = ({ letter, onEdit, onPlay, onView }: LetterCardProps) => {
       case 'sent': return 'Delivered';
       case 'archived': return 'Archived';
       default: return status;
+    }
+  };
+
+  const getDeliveryButtonText = (status: string) => {
+    switch (status) {
+      case 'draft': return 'Schedule';
+      case 'scheduled': return 'Send Now';
+      default: return null;
+    }
+  };
+
+  const getDeliveryIcon = (status: string) => {
+    switch (status) {
+      case 'draft': return Bell;
+      case 'scheduled': return Send;
+      default: return Send;
     }
   };
 
@@ -133,19 +150,39 @@ const LetterCard = ({ letter, onEdit, onPlay, onView }: LetterCardProps) => {
             </span>
           </div>
           
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(letter);
-            }}
-            disabled={letter.is_locked}
-            className="h-8"
-          >
-            <Edit className="h-3 w-3 mr-1" />
-            {letter.is_locked ? 'Locked' : 'Edit'}
-          </Button>
+          <div className="flex items-center space-x-2">
+            {getDeliveryButtonText(letter.status) && onTriggerDelivery && (
+              <Button 
+                variant={letter.status === 'draft' ? 'secondary' : 'default'} 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTriggerDelivery(letter);
+                }}
+                className="h-8"
+              >
+                {(() => {
+                  const IconComponent = getDeliveryIcon(letter.status);
+                  return <IconComponent className="h-3 w-3 mr-1" />;
+                })()}
+                {getDeliveryButtonText(letter.status)}
+              </Button>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(letter);
+              }}
+              disabled={letter.is_locked}
+              className="h-8"
+            >
+              <Edit className="h-3 w-3 mr-1" />
+              {letter.is_locked ? 'Locked' : 'Edit'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
