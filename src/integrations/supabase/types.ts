@@ -14,6 +14,238 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          input_data: Json | null
+          letter_id: string | null
+          output_data: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          input_data?: Json | null
+          letter_id?: string | null
+          output_data?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          input_data?: Json | null
+          letter_id?: string | null
+          output_data?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_events_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      letters: {
+        Row: {
+          ai_enhanced_goal: string | null
+          content: string
+          created_at: string
+          goal: string
+          id: string
+          is_locked: boolean | null
+          send_date: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          voice_memo_url: string | null
+        }
+        Insert: {
+          ai_enhanced_goal?: string | null
+          content: string
+          created_at?: string
+          goal: string
+          id?: string
+          is_locked?: boolean | null
+          send_date: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          voice_memo_url?: string | null
+        }
+        Update: {
+          ai_enhanced_goal?: string | null
+          content?: string
+          created_at?: string
+          goal?: string
+          id?: string
+          is_locked?: boolean | null
+          send_date?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          voice_memo_url?: string | null
+        }
+        Relationships: []
+      }
+      milestones: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          letter_id: string
+          percentage: number
+          reminder_sent: boolean | null
+          target_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          letter_id: string
+          percentage: number
+          reminder_sent?: boolean | null
+          target_date: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          letter_id?: string
+          percentage?: number
+          reminder_sent?: boolean | null
+          target_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          content: string
+          created_at: string
+          delivery_method: string
+          error_message: string | null
+          id: string
+          letter_id: string | null
+          milestone_id: string | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          delivery_method?: string
+          error_message?: string | null
+          id?: string
+          letter_id?: string | null
+          milestone_id?: string | null
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          delivery_method?: string
+          error_message?: string | null
+          id?: string
+          letter_id?: string | null
+          milestone_id?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_letter_id_fkey"
+            columns: ["letter_id"]
+            isOneToOne: false
+            referencedRelation: "letters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "milestones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          notification_preferences: Json | null
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          notification_preferences?: Json | null
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          notification_preferences?: Json | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           avatar_url: string | null
