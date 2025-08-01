@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { Calendar, Target, Clock, Edit, X, Save, Play } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import MilestoneManager from "./MilestoneManager";
 
