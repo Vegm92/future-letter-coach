@@ -17,6 +17,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import LetterCard from "./LetterCard";
+import LetterDetail from "./LetterDetail";
+import EditLetterForm from "./EditLetterForm";
 
 interface VisionVaultProps {
   onCreateClick: () => void;
@@ -25,6 +27,9 @@ interface VisionVaultProps {
 const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
   const [letters, setLetters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
+  const [editingLetter, setEditingLetter] = useState<any | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     scheduled: 0,
@@ -95,11 +100,25 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
   };
 
   const handleEditLetter = (letter: any) => {
-    // Edit functionality would be implemented here
-    toast({
-      title: "Edit functionality",
-      description: "Letter editing will be available in the next update.",
-    });
+    setEditingLetter(letter);
+    setShowDetail(false);
+  };
+
+  const handleViewLetter = (letter: any) => {
+    setSelectedLetter(letter);
+    setShowDetail(true);
+  };
+
+  const handleUpdateLetter = (updatedLetter: any) => {
+    setLetters(letters.map(l => l.id === updatedLetter.id ? updatedLetter : l));
+    setSelectedLetter(updatedLetter);
+  };
+
+  const handleEditSuccess = (updatedLetter: any) => {
+    setLetters(letters.map(l => l.id === updatedLetter.id ? updatedLetter : l));
+    setEditingLetter(null);
+    setSelectedLetter(updatedLetter);
+    setShowDetail(true);
   };
 
   const handlePlayVoiceMemo = (url: string) => {
@@ -226,6 +245,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                     key={letter.id}
                     letter={letter}
                     onEdit={handleEditLetter}
+                    onView={handleViewLetter}
                     onPlay={handlePlayVoiceMemo}
                   />
                 ))}
@@ -240,6 +260,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   key={letter.id}
                   letter={letter}
                   onEdit={handleEditLetter}
+                  onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
                 />
               ))}
@@ -253,6 +274,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   key={letter.id}
                   letter={letter}
                   onEdit={handleEditLetter}
+                  onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
                 />
               ))}
@@ -262,17 +284,42 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
           <TabsContent value="draft" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filterLetters('draft').map((letter) => (
-                <LetterCard
-                  key={letter.id}
-                  letter={letter}
-                  onEdit={handleEditLetter}
-                  onPlay={handlePlayVoiceMemo}
-                />
+                    <LetterCard
+                      key={letter.id}
+                      letter={letter}
+                      onEdit={handleEditLetter}
+                      onView={handleViewLetter}
+                      onPlay={handlePlayVoiceMemo}
+                    />
               ))}
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Letter Detail Modal */}
+      {selectedLetter && (
+        <LetterDetail
+          letter={selectedLetter}
+          isOpen={showDetail}
+          onClose={() => {
+            setShowDetail(false);
+            setSelectedLetter(null);
+          }}
+          onEdit={handleEditLetter}
+          onUpdate={handleUpdateLetter}
+          onPlay={handlePlayVoiceMemo}
+        />
+      )}
+
+      {/* Edit Letter Modal */}
+      {editingLetter && (
+        <EditLetterForm
+          letter={editingLetter}
+          onClose={() => setEditingLetter(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
     </div>
   );
 };

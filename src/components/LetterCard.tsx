@@ -27,13 +27,15 @@ interface Milestone {
   target_date: string;
 }
 
+
 interface LetterCardProps {
   letter: Letter;
   onEdit: (letter: Letter) => void;
   onPlay?: (url: string) => void;
+  onView: (letter: Letter) => void;
 }
 
-const LetterCard = ({ letter, onEdit, onPlay }: LetterCardProps) => {
+const LetterCard = ({ letter, onEdit, onPlay, onView }: LetterCardProps) => {
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
   const overallProgress = letter.milestones 
     ? Math.round((letter.milestones.filter(m => m.completed).length / letter.milestones.length) * 100)
@@ -60,7 +62,10 @@ const LetterCard = ({ letter, onEdit, onPlay }: LetterCardProps) => {
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30">
+    <Card 
+      className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30 cursor-pointer"
+      onClick={() => onView(letter)}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg font-semibold leading-tight line-clamp-2">
@@ -114,7 +119,10 @@ const LetterCard = ({ letter, onEdit, onPlay }: LetterCardProps) => {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => onPlay?.(letter.voice_memo_url!)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlay?.(letter.voice_memo_url!);
+                }}
                 className="h-8 px-2"
               >
                 <Play className="h-3 w-3" />
@@ -128,7 +136,10 @@ const LetterCard = ({ letter, onEdit, onPlay }: LetterCardProps) => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => onEdit(letter)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(letter);
+            }}
             disabled={letter.is_locked}
             className="h-8"
           >

@@ -63,6 +63,7 @@ export type Database = {
           goal: string
           id: string
           is_locked: boolean | null
+          personal_comments: string | null
           send_date: string
           status: string
           title: string
@@ -77,6 +78,7 @@ export type Database = {
           goal: string
           id?: string
           is_locked?: boolean | null
+          personal_comments?: string | null
           send_date: string
           status?: string
           title: string
@@ -91,6 +93,7 @@ export type Database = {
           goal?: string
           id?: string
           is_locked?: boolean | null
+          personal_comments?: string | null
           send_date?: string
           status?: string
           title?: string
