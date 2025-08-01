@@ -29,7 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const navigationItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "All Letters", url: "/letters", icon: Mail },
   { title: "Create Letter", url: "/create", icon: Plus },
   { title: "Settings", url: "/settings", icon: Settings },
@@ -48,9 +48,7 @@ export function AppSidebar({ user, onCreateClick }: AppSidebarProps) {
   const currentPath = location.pathname;
 
   const isActive = (path: string) => {
-    if (path === "/" && currentPath === "/") return true;
-    if (path !== "/" && currentPath.startsWith(path)) return true;
-    return false;
+    return currentPath === path;
   };
 
   const handleSignOut = async () => {
@@ -98,26 +96,38 @@ export function AppSidebar({ user, onCreateClick }: AppSidebarProps) {
                     {item.title === "Create Letter" ? (
                       <button
                         onClick={handleCreateClick}
-                        className={`w-full flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 ${
+                        className={`group w-full flex items-center space-x-2 p-2 rounded-md transition-all duration-200 hover:bg-primary/10 hover:text-primary border-l-2 border-transparent hover:border-primary/20 ${
                           collapsed ? "justify-center" : ""
                         }`}
                       >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
+                        {!collapsed && (
+                          <span className="text-foreground group-hover:text-primary transition-colors duration-200">
+                            {item.title}
+                          </span>
+                        )}
                       </button>
                     ) : (
                       <NavLink
                         to={item.url}
                         className={({ isActive: linkActive }) =>
-                          `flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50 ${
+                          `group relative flex items-center space-x-2 p-2 rounded-md transition-all duration-200 ${
                             isActive(item.url) || linkActive
-                              ? "bg-muted text-primary font-medium"
-                              : ""
+                              ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
+                              : "hover:bg-muted/50 border-l-2 border-transparent hover:border-primary/20"
                           } ${collapsed ? "justify-center" : ""}`
                         }
                       >
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        <item.icon className={`h-4 w-4 transition-colors duration-200 ${
+                          isActive(item.url) ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                        }`} />
+                        {!collapsed && (
+                          <span className={`transition-colors duration-200 ${
+                            isActive(item.url) ? "text-primary" : "text-foreground"
+                          }`}>
+                            {item.title}
+                          </span>
+                        )}
                       </NavLink>
                     )}
                   </SidebarMenuButton>

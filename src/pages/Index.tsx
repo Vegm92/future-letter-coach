@@ -36,7 +36,7 @@ const Index = () => {
 
   const handleGetStarted = () => {
     if (user) {
-      setShowCreateForm(true);
+      navigate('/dashboard');
     } else {
       setShowAuth(true);
     }
@@ -59,38 +59,10 @@ const Index = () => {
     return <AuthForm onBack={() => setShowAuth(false)} />;
   }
 
+  // If user is logged in, redirect to dashboard
   if (user) {
-    return (
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AppSidebar 
-            user={user} 
-            onCreateClick={() => setShowCreateForm(true)} 
-          />
-          
-          <div className="flex-1 flex flex-col">
-            <header className="h-12 flex items-center border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-              <SidebarTrigger className="ml-4" />
-              <div className="flex-1" />
-            </header>
-            
-            <main className="flex-1 overflow-auto">
-              <Dashboard 
-                onCreateClick={() => setShowCreateForm(true)}
-                onViewAllLetters={() => navigate('/letters')}
-              />
-            </main>
-          </div>
-          
-          {showCreateForm && (
-            <CreateLetterForm
-              onClose={() => setShowCreateForm(false)}
-              onSuccess={handleCreateSuccess}
-            />
-          )}
-        </div>
-      </SidebarProvider>
-    );
+    navigate('/dashboard');
+    return null;
   }
 
   return <HeroSection onGetStarted={handleGetStarted} />;

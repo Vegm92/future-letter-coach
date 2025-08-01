@@ -15,7 +15,7 @@ const Letters = () => {
   };
 
   return (
-    <AuthenticatedLayout>
+    <>
       <LettersView onCreateClick={handleCreateClick} />
       
       {showCreateForm && (
@@ -24,7 +24,7 @@ const Letters = () => {
           onSuccess={handleCreateSuccess}
         />
       )}
-    </AuthenticatedLayout>
+    </>
   );
 };
 
