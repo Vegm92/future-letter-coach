@@ -45,7 +45,7 @@ const handler = async (req: Request): Promise<Response> => {
       .insert({
         user_id: letter.user_id,
         letter_id: letter.id,
-        type: action === 'schedule' ? 'schedule' : 'delivery',
+        type: 'letter_delivery',
         subject: `Letter: ${letter.title}`,
         content: action === 'schedule' 
           ? `Your letter "${letter.title}" has been scheduled for delivery on ${letter.send_date}`

@@ -137,7 +137,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
         .insert({
           user_id: letter.user_id,
           letter_id: letter.id,
-          type: letter.status === 'draft' ? 'schedule' : 'delivery',
+          type: 'letter_delivery',
           subject: `Letter: ${letter.title}`,
           content: letter.status === 'draft' 
             ? `Your letter "${letter.title}" has been scheduled for delivery`
