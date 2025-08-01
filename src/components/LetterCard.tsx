@@ -2,8 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
+import { useState } from "react";
 
 interface Letter {
   id: string;
@@ -34,9 +36,11 @@ interface LetterCardProps {
   onPlay?: (url: string) => void;
   onView: (letter: Letter) => void;
   onTriggerDelivery?: (letter: Letter) => void;
+  onStatusChange?: (letter: Letter, newStatus: string) => void;
 }
 
-const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery }: LetterCardProps) => {
+const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatusChange }: LetterCardProps) => {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
   const overallProgress = letter.milestones 
     ? Math.round((letter.milestones.filter(m => m.completed).length / letter.milestones.length) * 100)
@@ -88,12 +92,42 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery }: Lette
           <CardTitle className="text-lg font-semibold leading-tight line-clamp-2">
             {letter.title}
           </CardTitle>
-          <Badge 
-            variant={getStatusColor(letter.status) as any}
-            className="shrink-0 ml-2"
-          >
-            {getStatusLabel(letter.status)}
-          </Badge>
+          <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            <AlertDialogTrigger asChild>
+              <Badge 
+                variant={getStatusColor(letter.status) as any}
+                className={`shrink-0 ml-2 ${letter.status === 'sent' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                onClick={(e) => {
+                  if (letter.status === 'sent') {
+                    e.stopPropagation();
+                    setShowConfirmDialog(true);
+                  }
+                }}
+              >
+                {getStatusLabel(letter.status)}
+              </Badge>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Change Letter Status</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to change the status from "Delivered" to "Scheduled"? 
+                  This will allow you to schedule the letter for delivery again.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    onStatusChange?.(letter, 'scheduled');
+                    setShowConfirmDialog(false);
+                  }}
+                >
+                  Change to Scheduled
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         
         <div className="flex items-center space-x-4 text-sm text-muted-foreground">

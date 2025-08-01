@@ -60,23 +60,82 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email if action is 'send'
     if (action === 'send') {
       try {
-        console.log(`Sending email to ${user.email} for letter ${letterId}`);
+        const startTime = Date.now();
+        console.log(`=== EMAIL DELIVERY START ===`);
+        console.log(`Timestamp: ${new Date().toISOString()}`);
+        console.log(`Letter ID: ${letterId}`);
+        console.log(`Recipient: ${user.email}`);
+        console.log(`Letter Title: ${letter.title}`);
+        console.log(`Letter Content Preview: ${letter.content.substring(0, 100)}...`);
+        console.log(`Letter Goal: ${letter.goal}`);
+        console.log(`Send Date: ${letter.send_date}`);
         
-        const emailResponse = await resend.emails.send({
+        const emailPayload = {
           from: 'Vision Vault <onboarding@resend.dev>',
           to: [user.email],
           subject: `Letter: ${letter.title}`,
           html: `
-            <h1>test</h1>
-            <p>This is a test email delivery from Vision Vault.</p>
-            <p>Letter: ${letter.title}</p>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h1 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">
+                Your Vision Vault Letter: ${letter.title}
+              </h1>
+              
+              <div style="background: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                <h2 style="color: #666; margin-top: 0;">Your Goal:</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #333;">${letter.ai_enhanced_goal || letter.goal}</p>
+              </div>
+              
+              <div style="margin: 20px 0;">
+                <h2 style="color: #666;">Your Letter:</h2>
+                <div style="background: white; padding: 20px; border-left: 4px solid #4F46E5; margin: 10px 0;">
+                  ${letter.content.replace(/\n/g, '<br>')}
+                </div>
+              </div>
+              
+              <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                  <strong>Scheduled for:</strong> ${new Date(letter.send_date).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
+              
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <p style="color: #999; font-size: 12px;">
+                  This letter was sent to you by Vision Vault - helping you achieve your future goals.
+                </p>
+              </div>
+            </div>
           `,
-        });
-
-        console.log('Email sent successfully:', emailResponse);
+        };
+        
+        console.log(`=== EMAIL PAYLOAD ===`);
+        console.log(`From: ${emailPayload.from}`);
+        console.log(`To: ${emailPayload.to.join(', ')}`);
+        console.log(`Subject: ${emailPayload.subject}`);
+        console.log(`HTML Content Length: ${emailPayload.html.length} characters`);
+        
+        console.log(`Sending email via Resend API...`);
+        const emailResponse = await resend.emails.send(emailPayload);
+        
+        const duration = Date.now() - startTime;
+        console.log(`=== EMAIL DELIVERY SUCCESS ===`);
+        console.log(`Duration: ${duration}ms`);
+        console.log(`Email ID: ${emailResponse.data?.id || 'N/A'}`);
+        console.log(`Response:`, JSON.stringify(emailResponse, null, 2));
+        console.log(`=== EMAIL DELIVERY END ===`);
+        
         emailSent = true;
       } catch (error: any) {
-        console.error('Error sending email:', error);
+        const duration = Date.now() - (Date.now() - 1000); // Approximate duration
+        console.error(`=== EMAIL DELIVERY FAILED ===`);
+        console.error(`Duration: ${duration}ms`);
+        console.error(`Error Type: ${error.constructor.name}`);
+        console.error(`Error Message: ${error.message}`);
+        console.error(`Full Error:`, JSON.stringify(error, null, 2));
+        console.error(`=== EMAIL DELIVERY END ===`);
         emailError = error.message;
       }
     }

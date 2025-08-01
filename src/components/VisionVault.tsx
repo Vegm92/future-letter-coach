@@ -131,25 +131,46 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
 
   const handleTriggerDelivery = async (letter: any) => {
     try {
-      // Create notification record
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: letter.user_id,
-          letter_id: letter.id,
-          type: 'letter_delivery',
-          subject: `Letter: ${letter.title}`,
-          content: letter.status === 'draft' 
-            ? `Your letter "${letter.title}" has been scheduled for delivery`
-            : `Your letter "${letter.title}" has been sent`,
-          scheduled_for: new Date().toISOString(),
-          delivery_method: 'email'
-        });
+      const action = letter.status === 'draft' ? 'schedule' : 'send';
+      
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('trigger-letter-delivery', {
+        body: {
+          letterId: letter.id,
+          action: action
+        }
+      });
 
-      if (notificationError) throw notificationError;
+      if (error) throw error;
 
-      // Update letter status
-      const newStatus = letter.status === 'draft' ? 'scheduled' : 'sent';
+      // Update local state based on the response
+      const newStatus = action === 'schedule' ? 'scheduled' : 'sent';
+      setLetters(letters.map(l => 
+        l.id === letter.id ? { ...l, status: newStatus } : l
+      ));
+
+      toast({
+        title: action === 'schedule' ? "Letter Scheduled" : "Letter Sent",
+        description: action === 'schedule' 
+          ? `"${letter.title}" has been scheduled for delivery`
+          : `"${letter.title}" has been sent successfully`,
+      });
+
+      // Refresh stats
+      fetchLetters();
+    } catch (error) {
+      console.error('Error triggering delivery:', error);
+      toast({
+        title: "Failed to process request",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStatusChange = async (letter: any, newStatus: string) => {
+    try {
+      // Update letter status in database
       const { error: updateError } = await supabase
         .from('letters')
         .update({ status: newStatus })
@@ -163,18 +184,16 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
       ));
 
       toast({
-        title: letter.status === 'draft' ? "Letter Scheduled" : "Letter Sent",
-        description: letter.status === 'draft' 
-          ? `"${letter.title}" has been scheduled for delivery`
-          : `"${letter.title}" has been sent successfully`,
+        title: "Status Updated",
+        description: `Letter status changed to ${newStatus}`,
       });
 
       // Refresh stats
       fetchLetters();
     } catch (error) {
-      console.error('Error triggering delivery:', error);
+      console.error('Error updating status:', error);
       toast({
-        title: "Failed to process request",
+        title: "Failed to update status",
         description: "Please try again later.",
         variant: "destructive",
       });
@@ -300,6 +319,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                     onView={handleViewLetter}
                     onPlay={handlePlayVoiceMemo}
                     onTriggerDelivery={handleTriggerDelivery}
+                    onStatusChange={handleStatusChange}
                   />
                 ))}
               </div>
@@ -316,6 +336,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
                   onTriggerDelivery={handleTriggerDelivery}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>
@@ -331,6 +352,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                   onView={handleViewLetter}
                   onPlay={handlePlayVoiceMemo}
                   onTriggerDelivery={handleTriggerDelivery}
+                  onStatusChange={handleStatusChange}
                 />
               ))}
             </div>
@@ -346,6 +368,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
                       onView={handleViewLetter}
                       onPlay={handlePlayVoiceMemo}
                       onTriggerDelivery={handleTriggerDelivery}
+                      onStatusChange={handleStatusChange}
                     />
               ))}
             </div>
