@@ -86,7 +86,7 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30 cursor-pointer animate-fade-in"
+      className="group hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-border/50 hover:border-primary/30 cursor-pointer animate-fade-in flex flex-col h-full"
       onClick={() => onView(letter)}
     >
       <CardHeader className="pb-3">
@@ -144,9 +144,9 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-5 flex flex-col flex-1">
         {/* Goal Section with better spacing */}
-        <div>
+        <div className="flex-1">
           <h4 className="font-medium text-sm mb-2 text-foreground">Goal:</h4>
           <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
             {letter.ai_enhanced_goal || letter.goal}
@@ -190,7 +190,7 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
         )}
         
         {/* Footer with metadata and secondary actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between pt-2 border-t border-border/50 mt-auto">
           <div className="flex items-center space-x-3">
             {letter.voice_memo_url && (
               <Button 
