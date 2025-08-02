@@ -144,14 +144,16 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-5">
+        {/* Goal Section with better spacing */}
         <div>
           <h4 className="font-medium text-sm mb-2 text-foreground">Goal:</h4>
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
             {letter.ai_enhanced_goal || letter.goal}
           </p>
         </div>
         
+        {/* Progress Section */}
         {letter.milestones && letter.milestones.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -166,8 +168,30 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
           </div>
         )}
         
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center space-x-2">
+        {/* Primary Actions Row */}
+        {getDeliveryButtonText(letter.status) && onTriggerDelivery && (
+          <div className="flex justify-end">
+            <Button 
+              variant={letter.status === 'draft' ? 'secondary' : 'default'} 
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTriggerDelivery(letter);
+              }}
+              className="h-8"
+            >
+              {(() => {
+                const IconComponent = getDeliveryIcon(letter.status);
+                return <IconComponent className="h-3 w-3 mr-2" />;
+              })()}
+              {getDeliveryButtonText(letter.status)}
+            </Button>
+          </div>
+        )}
+        
+        {/* Footer with metadata and secondary actions */}
+        <div className="flex items-center justify-between pt-2 border-t border-border/50">
+          <div className="flex items-center space-x-3">
             {letter.voice_memo_url && (
               <Button 
                 variant="ghost" 
@@ -176,7 +200,7 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
                   e.stopPropagation();
                   onPlay?.(letter.voice_memo_url!);
                 }}
-                className="h-8 px-2"
+                className="h-8 px-2 text-muted-foreground hover:text-primary"
               >
                 <Play className="h-3 w-3" />
               </Button>
@@ -186,50 +210,31 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
             </span>
           </div>
           
-          <div className="flex items-center space-x-2">
-            {getDeliveryButtonText(letter.status) && onTriggerDelivery && (
-              <Button 
-                variant={letter.status === 'draft' ? 'secondary' : 'default'} 
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTriggerDelivery(letter);
-                }}
-                className="h-8"
-              >
-                {(() => {
-                  const IconComponent = getDeliveryIcon(letter.status);
-                  return <IconComponent className="h-3 w-3 mr-1" />;
-                })()}
-                {getDeliveryButtonText(letter.status)}
-              </Button>
-            )}
-            
+          <div className="flex items-center space-x-1">
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(letter);
               }}
               disabled={letter.is_locked}
-              className="h-8"
+              className="h-8 px-2 text-muted-foreground hover:text-primary"
             >
-              <Edit className="h-3 w-3 mr-1" />
-              {letter.is_locked ? 'Locked' : 'Edit'}
+              <Edit className="h-3 w-3" />
             </Button>
             
             {onDelete && (
               <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogTrigger asChild>
                   <Button 
-                    variant="outline" 
+                    variant="ghost" 
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowDeleteDialog(true);
                     }}
-                    className="h-8 text-destructive hover:text-destructive"
+                    className="h-8 px-2 text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -244,7 +249,8 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         onDelete(letter);
                         setShowDeleteDialog(false);
                       }}
