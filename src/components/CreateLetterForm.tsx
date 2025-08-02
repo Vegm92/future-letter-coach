@@ -12,7 +12,7 @@ import { addDays, format } from "date-fns";
 
 interface CreateLetterFormProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (letterData?: any) => void;
 }
 
 const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
@@ -121,7 +121,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
-      const { error } = await supabase.from('letters').insert({
+      const { data, error } = await supabase.from('letters').insert({
         user_id: user.user.id,
         title: formData.title,
         content: formData.content,
@@ -129,7 +129,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         ai_enhanced_goal: isEnhanced ? 'true' : null,
         send_date: formData.send_date,
         status: 'scheduled'
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -138,7 +138,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         description: "Your future self will receive this on the scheduled date.",
       });
       
-      onSuccess();
+      // Pass the letter data to trigger milestone suggestions
+      onSuccess(data);
       onClose();
     } catch (error) {
       console.error('Error creating letter:', error);
