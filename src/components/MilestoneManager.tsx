@@ -252,19 +252,9 @@ const MilestoneManager = ({ letterId, milestones, onUpdate }: MilestoneManagerPr
       <Dialog open={isOpen} onOpenChange={closeForm}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>
-                {isCreating ? "Create New Milestone" : "Edit Milestone"}
-              </DialogTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={closeForm}
-                className="h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle>
+              {isCreating ? "Create New Milestone" : "Edit Milestone"}
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
