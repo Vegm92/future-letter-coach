@@ -157,6 +157,33 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
     }
   };
 
+  const handleDeleteLetter = async (letter: any) => {
+    try {
+      // Delete the letter (milestones will be cascade deleted due to foreign key)
+      const { error: deleteError } = await supabase
+        .from('letters')
+        .delete()
+        .eq('id', letter.id);
+
+      if (deleteError) throw deleteError;
+
+      // Update local state
+      setLetters(letters.filter(l => l.id !== letter.id));
+
+      toast({
+        title: "Letter Deleted",
+        description: `"${letter.title}" and all associated data have been permanently deleted.`,
+      });
+    } catch (error) {
+      console.error('Error deleting letter:', error);
+      toast({
+        title: "Failed to delete letter",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filterLetters = (status?: string) => {
     if (!status) return letters;
     return letters.filter(letter => letter.status === status);
@@ -232,6 +259,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
                   onPlay={handlePlayVoiceMemo}
                   onTriggerDelivery={handleTriggerDelivery}
                   onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteLetter}
                 />
               ))}
             </div>
@@ -249,6 +277,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
                 onPlay={handlePlayVoiceMemo}
                 onTriggerDelivery={handleTriggerDelivery}
                 onStatusChange={handleStatusChange}
+                onDelete={handleDeleteLetter}
               />
             ))}
           </div>
@@ -265,6 +294,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
                 onPlay={handlePlayVoiceMemo}
                 onTriggerDelivery={handleTriggerDelivery}
                 onStatusChange={handleStatusChange}
+                onDelete={handleDeleteLetter}
               />
             ))}
           </div>
@@ -281,6 +311,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
                 onPlay={handlePlayVoiceMemo}
                 onTriggerDelivery={handleTriggerDelivery}
                 onStatusChange={handleStatusChange}
+                onDelete={handleDeleteLetter}
               />
             ))}
           </div>
@@ -299,6 +330,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
           onEdit={handleEditLetter}
           onUpdate={handleUpdateLetter}
           onPlay={handlePlayVoiceMemo}
+          onDelete={handleDeleteLetter}
         />
       )}
 

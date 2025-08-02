@@ -23,6 +23,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     send_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
   });
   const [originalFormData, setOriginalFormData] = useState<typeof formData | null>(null);
+  const [enhancedFormData, setEnhancedFormData] = useState<typeof formData | null>(null);
   const [isEnhanced, setIsEnhanced] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -58,12 +59,14 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
       
       // Auto-apply enhanced content
       if (data.enhancedLetter) {
-        setFormData({
+        const enhanced = {
           ...formData,
           title: data.enhancedLetter.title,
           goal: data.enhancedLetter.goal,
           content: data.enhancedLetter.content,
-        });
+        };
+        setEnhancedFormData(enhanced);
+        setFormData(enhanced);
         setIsEnhanced(true);
         
         toast({
@@ -83,13 +86,22 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     }
   };
 
-  const restoreOriginal = () => {
-    if (originalFormData) {
+  const toggleContent = () => {
+    if (isEnhanced && originalFormData) {
+      // Currently showing enhanced, switch to original
       setFormData({ ...originalFormData });
       setIsEnhanced(false);
       toast({
-        title: "Original content restored",
-        description: "Your letter has been reverted to the original version.",
+        title: "Showing original content",
+        description: "Switched to your original version.",
+      });
+    } else if (!isEnhanced && enhancedFormData) {
+      // Currently showing original, switch to enhanced
+      setFormData({ ...enhancedFormData });
+      setIsEnhanced(true);
+      toast({
+        title: "Showing enhanced content",
+        description: "Switched to AI-enhanced version.",
       });
     }
   };
@@ -225,14 +237,14 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                   )}
                 </div>
                 <div className="flex space-x-2">
-                  {isEnhanced && originalFormData && (
+                  {originalFormData && enhancedFormData && (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={restoreOriginal}
+                      onClick={toggleContent}
                     >
-                      Show Original
+                      Show {isEnhanced ? 'Original' : 'Enhanced'}
                     </Button>
                   )}
                   <Button

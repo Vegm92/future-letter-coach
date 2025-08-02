@@ -5,8 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Target, Clock, Edit, X, Save, Play } from "lucide-react";
+import { Calendar, Target, Clock, Edit, X, Save, Play, Trash2 } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -42,12 +43,14 @@ interface LetterDetailProps {
   onEdit: (letter: Letter) => void;
   onUpdate: (updatedLetter: Letter) => void;
   onPlay?: (url: string) => void;
+  onDelete?: (letter: Letter) => void;
 }
 
-const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: LetterDetailProps) => {
+const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDelete }: LetterDetailProps) => {
   const [personalComments, setPersonalComments] = useState(letter.personal_comments || "");
   const [isSavingComments, setIsSavingComments] = useState(false);
   const [showOriginalGoal, setShowOriginalGoal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
 
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
@@ -122,6 +125,43 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
               <Badge variant={getStatusColor(letter.status) as any}>
                 {getStatusLabel(letter.status)}
               </Badge>
+              {onDelete && (
+                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Letter</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to permanently delete "{letter.title}"? This action cannot be undone and will remove:
+                        <br />• The letter content and all metadata
+                        <br />• All associated milestones and progress data
+                        <br />• Any scheduled delivery notifications
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          onDelete(letter);
+                          setShowDeleteDialog(false);
+                          onClose();
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete Permanently
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
               <Button
                 variant="ghost"
                 size="sm"

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell } from "lucide-react";
+import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell, Trash2 } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useState } from "react";
 
@@ -37,10 +37,12 @@ interface LetterCardProps {
   onView: (letter: Letter) => void;
   onTriggerDelivery?: (letter: Letter) => void;
   onStatusChange?: (letter: Letter, newStatus: string) => void;
+  onDelete?: (letter: Letter) => void;
 }
 
-const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatusChange }: LetterCardProps) => {
+const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatusChange, onDelete }: LetterCardProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
   const overallProgress = letter.milestones 
     ? Math.round((letter.milestones.filter(m => m.completed).length / letter.milestones.length) * 100)
@@ -216,6 +218,44 @@ const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatu
               <Edit className="h-3 w-3 mr-1" />
               {letter.is_locked ? 'Locked' : 'Edit'}
             </Button>
+            
+            {onDelete && (
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDeleteDialog(true);
+                    }}
+                    className="h-8 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Letter</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{letter.title}"? This action cannot be undone and will also delete all associated milestones and progress data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        onDelete(letter);
+                        setShowDeleteDialog(false);
+                      }}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete Letter
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
       </CardContent>
