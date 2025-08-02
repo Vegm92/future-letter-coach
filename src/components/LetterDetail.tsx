@@ -47,6 +47,7 @@ interface LetterDetailProps {
 const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: LetterDetailProps) => {
   const [personalComments, setPersonalComments] = useState(letter.personal_comments || "");
   const [isSavingComments, setIsSavingComments] = useState(false);
+  const [showOriginalGoal, setShowOriginalGoal] = useState(false);
   const { toast } = useToast();
 
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
@@ -72,6 +73,10 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
       case 'archived': return 'Archived';
       default: return status;
     }
+  };
+
+  const isValidEnhancedGoal = (enhancedGoal?: string) => {
+    return enhancedGoal && enhancedGoal !== "true" && enhancedGoal.trim().length > 0;
   };
 
   const handleSaveComments = async () => {
@@ -157,21 +162,40 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay }: Let
 
           {/* Goal Section */}
           <div>
-            <h3 className="text-lg font-semibold mb-3 flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Goal
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-1">Original Goal:</h4>
-                <p className="text-sm bg-muted/50 p-3 rounded-md">{letter.goal}</p>
-              </div>
-              {letter.ai_enhanced_goal && (
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Target className="h-5 w-5 mr-2" />
+                Goal
+              </h3>
+              {isValidEnhancedGoal(letter.ai_enhanced_goal) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOriginalGoal(!showOriginalGoal)}
+                  className="text-xs"
+                >
+                  Show {showOriginalGoal ? 'Enhanced' : 'Original'}
+                </Button>
+              )}
+            </div>
+            <div>
+              {isValidEnhancedGoal(letter.ai_enhanced_goal) ? (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-1">AI Enhanced Goal:</h4>
-                  <p className="text-sm bg-primary/10 p-3 rounded-md border border-primary/20">
-                    {letter.ai_enhanced_goal}
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    {showOriginalGoal ? 'Original Goal:' : 'Enhanced Goal:'}
+                  </h4>
+                  <p className={`text-sm p-3 rounded-md ${
+                    showOriginalGoal 
+                      ? 'bg-muted/50' 
+                      : 'bg-primary/10 border border-primary/20'
+                  }`}>
+                    {showOriginalGoal ? letter.goal : letter.ai_enhanced_goal}
                   </p>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Goal:</h4>
+                  <p className="text-sm bg-muted/50 p-3 rounded-md">{letter.goal}</p>
                 </div>
               )}
             </div>
