@@ -49,7 +49,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         body: { 
           title: formData.title,
           goal: formData.goal,
-          content: formData.content
+          content: formData.content,
+          send_date: formData.send_date
         }
       });
 

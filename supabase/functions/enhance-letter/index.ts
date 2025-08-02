@@ -14,10 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    const { title, goal, content } = await req.json();
+    const { title, goal, content, send_date } = await req.json();
     
     console.log('=== ENHANCE LETTER DEBUG ===');
-    console.log('Input:', { title, goal, content });
+    console.log('Input:', { title, goal, content, send_date });
     console.log('OpenAI API Key available:', !!openAIApiKey);
 
     if (!openAIApiKey) {
@@ -48,8 +48,9 @@ serve(async (req) => {
 Title: "${title || 'Letter to Future Me'}"
 Goal: "${goal || 'Not specified'}"
 Content: "${content || 'Not provided'}"
+Send Date: "${send_date || 'Not specified'}"
 
-Return ONLY a JSON object with enhanced versions. Even if the content is brief, provide meaningful enhancements that add specificity, emotion, and motivation. Make it sound more personal and inspiring while keeping the core intent.`
+When creating SMART goals, use the provided send date as the target deadline. If a send date is provided, ensure the enhanced goal references this specific date for the time-bound component. Return ONLY a JSON object with enhanced versions. Even if the content is brief, provide meaningful enhancements that add specificity, emotion, and motivation. Make it sound more personal and inspiring while keeping the core intent.`
           }
         ],
         max_tokens: 600,
