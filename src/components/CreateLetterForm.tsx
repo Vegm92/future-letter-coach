@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Calendar, Target, Mic, MicOff, Send } from "lucide-react";
+import { Sparkles, Calendar, Target, Mic, MicOff, Send, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, format } from "date-fns";
@@ -13,6 +13,13 @@ import { addDays, format } from "date-fns";
 interface CreateLetterFormProps {
   onClose: () => void;
   onSuccess: (letterData?: any) => void;
+}
+
+interface Milestone {
+  title: string;
+  percentage: number;
+  target_date: string;
+  description: string;
 }
 
 const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
@@ -28,6 +35,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [showMilestones, setShowMilestones] = useState(false);
   const { toast } = useToast();
 
   const handleEnhanceLetter = async () => {
@@ -106,6 +115,27 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     }
   };
 
+  const addMilestone = () => {
+    const newMilestone: Milestone = {
+      title: '',
+      percentage: 25,
+      target_date: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
+      description: ''
+    };
+    setMilestones([...milestones, newMilestone]);
+  };
+
+  const updateMilestone = (index: number, field: keyof Milestone, value: string | number) => {
+    const updated = milestones.map((milestone, i) => 
+      i === index ? { ...milestone, [field]: value } : milestone
+    );
+    setMilestones(updated);
+  };
+
+  const removeMilestone = (index: number) => {
+    setMilestones(milestones.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim() || !formData.content.trim() || !formData.goal.trim()) {
@@ -121,7 +151,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase.from('letters').insert({
+      // Create the letter first
+      const { data: letterData, error: letterError } = await supabase.from('letters').insert({
         user_id: user.user.id,
         title: formData.title,
         content: formData.content,
@@ -131,15 +162,47 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         status: 'scheduled'
       }).select().single();
 
-      if (error) throw error;
+      if (letterError) throw letterError;
+
+      // Create milestones if any exist
+      if (milestones.length > 0) {
+        const milestonesToInsert = milestones
+          .filter(m => m.title.trim()) // Only insert milestones with titles
+          .map(milestone => ({
+            letter_id: letterData.id,
+            title: milestone.title,
+            percentage: milestone.percentage,
+            target_date: milestone.target_date,
+            description: milestone.description || null,
+            completed: false
+          }));
+
+        if (milestonesToInsert.length > 0) {
+          const { error: milestoneError } = await supabase
+            .from('milestones')
+            .insert(milestonesToInsert);
+
+          if (milestoneError) {
+            console.error('Error creating milestones:', milestoneError);
+            // Don't fail the whole operation, just warn
+            toast({
+              title: "Letter created, but milestone creation failed",
+              description: "You can add milestones later from the letter details.",
+              variant: "destructive",
+            });
+          }
+        }
+      }
 
       toast({
         title: "Letter created successfully!",
-        description: "Your future self will receive this on the scheduled date.",
+        description: milestones.length > 0 ? 
+          "Your letter and milestones have been created." : 
+          "Your future self will receive this on the scheduled date.",
       });
       
       // Pass the letter data to trigger milestone suggestions
-      onSuccess(data);
+      onSuccess(letterData);
       onClose();
     } catch (error) {
       console.error('Error creating letter:', error);
@@ -223,6 +286,112 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                 className="min-h-[150px]"
                 required
               />
+            </div>
+
+            {/* Milestones Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <span className="font-medium">Milestones (Optional)</span>
+                  {milestones.length > 0 && (
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      {milestones.length}
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowMilestones(!showMilestones)}
+                >
+                  {showMilestones ? 'Hide' : 'Add'} Milestones
+                </Button>
+              </div>
+
+              {showMilestones && (
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <p className="text-sm text-muted-foreground">
+                    Break down your goal into smaller, measurable milestones to track your progress.
+                  </p>
+                  
+                  {milestones.map((milestone, index) => (
+                    <div key={index} className="p-3 bg-background rounded-lg border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Milestone {index + 1}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeMilestone(index)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor={`milestone-title-${index}`}>Title</Label>
+                          <Input
+                            id={`milestone-title-${index}`}
+                            placeholder="e.g., Lose first 10 lbs"
+                            value={milestone.title}
+                            onChange={(e) => updateMilestone(index, 'title', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`milestone-percentage-${index}`}>Progress %</Label>
+                          <Input
+                            id={`milestone-percentage-${index}`}
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={milestone.percentage}
+                            onChange={(e) => updateMilestone(index, 'percentage', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor={`milestone-date-${index}`}>Target Date</Label>
+                          <Input
+                            id={`milestone-date-${index}`}
+                            type="date"
+                            value={milestone.target_date}
+                            onChange={(e) => updateMilestone(index, 'target_date', e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor={`milestone-description-${index}`}>Description</Label>
+                          <Input
+                            id={`milestone-description-${index}`}
+                            placeholder="Optional details..."
+                            value={milestone.description}
+                            onChange={(e) => updateMilestone(index, 'description', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addMilestone}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Milestone
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* AI Enhancement Section */}
