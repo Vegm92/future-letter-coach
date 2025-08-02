@@ -77,7 +77,7 @@ const Letters = () => {
     <>
       <LettersView 
         onCreateClick={handleCreateClick} 
-        key={refreshKey} 
+        refreshTrigger={refreshKey}
       />
       
       {showCreateForm && (

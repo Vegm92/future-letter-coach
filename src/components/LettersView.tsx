@@ -14,9 +14,10 @@ import EditLetterForm from "./EditLetterForm";
 
 interface LettersViewProps {
   onCreateClick: () => void;
+  refreshTrigger?: number;
 }
 
-const LettersView = ({ onCreateClick }: LettersViewProps) => {
+const LettersView = ({ onCreateClick, refreshTrigger }: LettersViewProps) => {
   const [letters, setLetters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
@@ -26,7 +27,7 @@ const LettersView = ({ onCreateClick }: LettersViewProps) => {
 
   useEffect(() => {
     fetchLetters();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchLetters = async () => {
     try {
