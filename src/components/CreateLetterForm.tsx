@@ -46,7 +46,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     data: enhancementData,
     isLoading: isEnhancing,
     error: enhancementError,
-    refetch: triggerEnhancement
+    refetch: triggerEnhancement,
+    isSuccess: enhancementSuccess
   } = useEnhanceLetterComplete({
     title: formData.title,
     goal: formData.goal,
@@ -54,6 +55,15 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     send_date: formData.send_date,
     enabled: false // Only run when explicitly triggered
   });
+
+  // Auto-expand enhancement section when AI enhancement completes successfully
+  if (enhancementSuccess && enhancementData && hasTriggeredEnhancement && !showEnhancement) {
+    setShowEnhancement(true);
+    toast({
+      title: "✨ Letter Enhanced!",
+      description: "Your letter has been enhanced with AI. Review the suggestions below.",
+    });
+  }
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
