@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useEnhanceLetterComplete } from "@/hooks/useEnhanceLetterComplete";
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
 
 interface Milestone {
@@ -25,6 +26,7 @@ interface MilestoneManagerProps {
   milestones: Milestone[];
   onUpdate: (milestones: Milestone[]) => void;
   letter?: {
+    title: string;
     goal: string;
     content: string;
     send_date: string;
@@ -40,10 +42,21 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
   const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestedMilestones, setSuggestedMilestones] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Use the unified enhancement hook for milestone suggestions
+  const { 
+    data: enhancementData, 
+    isLoading: isLoadingSuggestions,
+    refetch: generateSuggestions
+  } = useEnhanceLetterComplete({
+    title: letter?.title || '',
+    goal: letter?.goal || '',
+    content: letter?.content || '',
+    send_date: letter?.send_date || '',
+    enabled: false // Only trigger manually
+  });
 
   const openCreateForm = () => {
     setEditingMilestone(null);
@@ -184,25 +197,13 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
       return;
     }
 
-    setIsLoadingSuggestions(true);
     try {
-      const { data, error } = await supabase.functions.invoke('suggest-milestones', {
-        body: {
-          letterId,
-          goal: letter.goal,
-          content: letter.content,
-          sendDate: letter.send_date,
-        },
+      await generateSuggestions();
+      setShowSuggestions(true);
+      toast({
+        title: "Milestones suggested!",
+        description: "AI has generated milestone suggestions for your goal.",
       });
-
-      if (error) throw error;
-
-      if (data && data.suggestedMilestones && Array.isArray(data.suggestedMilestones)) {
-        setSuggestedMilestones(data.suggestedMilestones);
-        setShowSuggestions(true);
-      } else {
-        throw new Error('Invalid response format');
-      }
     } catch (error) {
       console.error('Error suggesting milestones:', error);
       toast({
@@ -210,8 +211,6 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
         description: "Unable to generate milestone suggestions. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoadingSuggestions(false);
     }
   };
 
@@ -405,18 +404,16 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
       </Dialog>
 
       {/* AI Suggested Milestones Inline */}
-      {showSuggestions && suggestedMilestones.length > 0 && (
+      {showSuggestions && enhancementData?.suggestedMilestones && enhancementData.suggestedMilestones.length > 0 && (
         <InlineMilestoneSuggestions
           letterId={letterId}
-          suggestedMilestones={suggestedMilestones}
+          suggestedMilestones={enhancementData.suggestedMilestones}
           onMilestonesAdded={() => {
             onUpdate(milestones);
             setShowSuggestions(false);
-            setSuggestedMilestones([]);
           }}
           onClose={() => {
             setShowSuggestions(false);
-            setSuggestedMilestones([]);
           }}
         />
       )}

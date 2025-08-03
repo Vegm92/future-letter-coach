@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Calendar, X, Sparkles, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
+import { useEnhanceLetterComplete } from "@/hooks/useEnhanceLetterComplete";
 
 interface Letter {
   id: string;
@@ -34,13 +35,33 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
   const [content, setContent] = useState(letter.content);
   const [goal, setGoal] = useState(letter.goal);
   const [sendDate, setSendDate] = useState(format(parseISO(letter.send_date), 'yyyy-MM-dd'));
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhancedGoal, setEnhancedGoal] = useState(letter.ai_enhanced_goal || "");
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [enableEnhancement, setEnableEnhancement] = useState(false);
   const { toast } = useToast();
 
-  const handleEnhanceGoal = async () => {
+  // Use the unified enhancement hook
+  const { 
+    data: enhancementData, 
+    isLoading: isEnhancing, 
+    error: enhancementError 
+  } = useEnhanceLetterComplete({
+    title,
+    goal,
+    content,
+    send_date: sendDate,
+    enabled: enableEnhancement && Boolean(goal?.trim())
+  });
+
+  // Update enhanced goal when data is received
+  useEffect(() => {
+    if (enhancementData?.enhancedLetter?.goal) {
+      setEnhancedGoal(enhancementData.enhancedLetter.goal);
+    }
+  }, [enhancementData]);
+
+  const handleEnhanceGoal = () => {
     if (!goal.trim()) {
       toast({
         title: "Goal required",
@@ -50,29 +71,23 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
       return;
     }
 
-    setIsEnhancing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('enhance-goal', {
-        body: { goal }
-      });
+    setEnableEnhancement(true);
+    toast({
+      title: "Enhancing your letter...",
+      description: "AI is creating an enhanced version with milestone suggestions.",
+    });
+  };
 
-      if (error) throw error;
-
-      setEnhancedGoal(data.enhancedGoal);
-      toast({
-        title: "Goal enhanced!",
-        description: "Your goal has been made more specific and inspiring.",
-      });
-    } catch (error) {
+  // Show enhancement error if it occurs
+  useEffect(() => {
+    if (enhancementError) {
       toast({
         title: "Enhancement failed",
         description: "Failed to enhance your goal. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsEnhancing(false);
     }
-  };
+  }, [enhancementError, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
