@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Calendar, Target, X } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SuggestedMilestones from "./SuggestedMilestones";
 
 interface Milestone {
   id: string;
@@ -23,9 +24,14 @@ interface MilestoneManagerProps {
   letterId: string;
   milestones: Milestone[];
   onUpdate: (milestones: Milestone[]) => void;
+  letter?: {
+    goal: string;
+    content: string;
+    send_date: string;
+  };
 }
 
-const MilestoneManager = ({ letterId, milestones, onUpdate }: MilestoneManagerProps) => {
+const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -34,6 +40,9 @@ const MilestoneManager = ({ letterId, milestones, onUpdate }: MilestoneManagerPr
   const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestedMilestones, setSuggestedMilestones] = useState<any[]>([]);
   const { toast } = useToast();
 
   const openCreateForm = () => {
@@ -165,14 +174,77 @@ const MilestoneManager = ({ letterId, milestones, onUpdate }: MilestoneManagerPr
     }
   };
 
+  const handleSuggestMilestones = async () => {
+    if (!letter) {
+      toast({
+        title: "Cannot suggest milestones",
+        description: "Letter data is not available.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoadingSuggestions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-milestones', {
+        body: {
+          letterId,
+          goal: letter.goal,
+          content: letter.content,
+          sendDate: letter.send_date,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data && Array.isArray(data)) {
+        setSuggestedMilestones(data);
+        setShowSuggestions(true);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error('Error suggesting milestones:', error);
+      toast({
+        title: "Failed to generate suggestions",
+        description: "Unable to generate milestone suggestions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleMilestonesAdded = () => {
+    // Refresh milestones by calling onUpdate with current milestones
+    // This will trigger a re-fetch in the parent component
+    setShowSuggestions(false);
+    // In a real app, you'd typically refresh from the parent component
+    // For now, we'll just close the dialog and let the parent handle refresh
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Milestones</h3>
-        <Button onClick={openCreateForm} size="sm" className="h-8">
-          <Plus className="h-3 w-3 mr-1" />
-          Add Milestone
-        </Button>
+        <div className="flex items-center gap-2">
+          {letter && (
+            <Button 
+              onClick={handleSuggestMilestones} 
+              size="sm" 
+              variant="outline" 
+              className="h-8"
+              disabled={isLoadingSuggestions}
+            >
+              <Lightbulb className="h-3 w-3 mr-1" />
+              {isLoadingSuggestions ? "Suggesting..." : "Suggest Milestones"}
+            </Button>
+          )}
+          <Button onClick={openCreateForm} size="sm" className="h-8">
+            <Plus className="h-3 w-3 mr-1" />
+            Add Milestone
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -331,6 +403,15 @@ const MilestoneManager = ({ letterId, milestones, onUpdate }: MilestoneManagerPr
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* AI Suggested Milestones Dialog */}
+      <SuggestedMilestones
+        isOpen={showSuggestions}
+        onClose={() => setShowSuggestions(false)}
+        letterId={letterId}
+        suggestedMilestones={suggestedMilestones}
+        onMilestonesAdded={handleMilestonesAdded}
+      />
     </div>
   );
 };

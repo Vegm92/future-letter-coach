@@ -259,6 +259,11 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDel
               onUpdate={(updatedMilestones) => {
                 onUpdate({ ...letter, milestones: updatedMilestones });
               }}
+              letter={{
+                goal: letter.goal,
+                content: letter.content,
+                send_date: letter.send_date,
+              }}
             />
           </div>
 
