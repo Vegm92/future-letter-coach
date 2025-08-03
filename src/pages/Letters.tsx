@@ -19,54 +19,13 @@ const Letters = () => {
   };
 
   const handleCreateSuccess = async (letterData?: any) => {
-    console.log('Letter created successfully:', letterData);
     setShowCreateForm(false);
     setRefreshKey(prev => prev + 1); // Trigger LettersView refresh
     
-    if (letterData) {
-      // Generate milestone suggestions
-      try {
-        console.log('Calling suggest-milestones function...');
-        const { data, error } = await supabase.functions.invoke('suggest-milestones', {
-          body: {
-            letterId: letterData.id,
-            goal: letterData.goal,
-            content: letterData.content,
-            sendDate: letterData.send_date,
-          }
-        });
-
-        console.log('Suggest-milestones response:', { data, error });
-
-        if (error) {
-          console.error('Error getting milestone suggestions:', error);
-          toast({
-            title: "Letter created successfully!",
-            description: "Milestone suggestions failed to load.",
-          });
-          return;
-        }
-
-        if (data?.suggestedMilestones && data.suggestedMilestones.length > 0) {
-          console.log('Setting suggested milestones:', data.suggestedMilestones);
-          setSuggestedMilestones(data.suggestedMilestones);
-          setCurrentLetterId(letterData.id);
-          setShowMilestoneSuggestions(true);
-        } else {
-          console.log('No milestone suggestions received');
-          toast({
-            title: "Letter created successfully!",
-            description: "No milestone suggestions were generated.",
-          });
-        }
-      } catch (error) {
-        console.error('Error calling suggest-milestones function:', error);
-        toast({
-          title: "Letter created successfully!",
-          description: "Milestone suggestions are temporarily unavailable.",
-        });
-      }
-    }
+    toast({
+      title: "Letter created successfully!",
+      description: "Your letter has been created. You can now edit it to enhance with AI and add milestones.",
+    });
   };
 
   const handleMilestonesAdded = () => {

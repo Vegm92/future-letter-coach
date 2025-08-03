@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Calendar, X, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -216,24 +217,35 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
             </div>
 
             {/* AI Enhancement Section */}
-            <div className="border border-dashed border-primary/30 rounded-lg p-4 bg-primary/5">
+            <div className="p-4 bg-gradient-to-r from-primary/5 to-primary-glow/5 rounded-lg border border-primary/20">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-primary">AI Letter Enhancement</span>
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span className="font-medium">✨ AI Enhance Letter + Generate Milestones</span>
+                  {enhancementData && (
+                    <Badge variant="secondary" className="bg-success/10 text-success">
+                      Enhanced
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
+                  variant="hero"
                   onClick={handleEnhanceLetter}
                   disabled={isEnhancing || !goal.trim() || !title.trim() || !content.trim() || letter.is_locked}
-                  className="h-8"
+                  className="shrink-0"
                 >
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  {isEnhancing ? "Enhancing..." : "Enhance Letter"}
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  {isEnhancing ? 'Enhancing...' : enhancementData ? 'Re-enhance' : 'Enhance & Suggest'}
                 </Button>
               </div>
+              <p className="text-sm text-muted-foreground">
+                {enhancementData 
+                  ? `Letter enhanced with ${enhancementData.suggestedMilestones?.length || 0} milestone suggestions. Review and apply changes below.`
+                  : "Get AI-powered improvements to your letter's clarity, structure, and emotional impact, plus personalized milestone suggestions."
+                }
+              </p>
+            </div>
               
               {enhancementData?.enhancedLetter && (
                 <Collapsible open={showEnhancedLetter} onOpenChange={setShowEnhancedLetter}>
@@ -322,7 +334,6 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
                   </CollapsibleContent>
                 </Collapsible>
               )}
-            </div>
 
             {/* Goal */}
             <div>

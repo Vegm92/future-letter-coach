@@ -227,6 +227,10 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Milestones</h3>
         <div className="flex items-center gap-2">
+          <Button onClick={openCreateForm} size="sm" className="h-8">
+            <Plus className="h-3 w-3 mr-1" />
+            Add Milestone
+          </Button>
           {letter && (
             <Button 
               onClick={handleSuggestMilestones} 
@@ -236,13 +240,9 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
               disabled={isLoadingSuggestions}
             >
               <Lightbulb className="h-3 w-3 mr-1" />
-              {isLoadingSuggestions ? "Suggesting..." : "Suggest Milestones"}
+              {isLoadingSuggestions ? "AI Suggest" : "AI Suggest"}
             </Button>
           )}
-          <Button onClick={openCreateForm} size="sm" className="h-8">
-            <Plus className="h-3 w-3 mr-1" />
-            Add Milestone
-          </Button>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Calendar, Target, Mic, MicOff, Send, Plus, Trash2 } from "lucide-react";
+import { Calendar, Target, Mic, MicOff, Send, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, format } from "date-fns";
@@ -29,91 +29,12 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     goal: '',
     send_date: format(addDays(new Date(), 30), 'yyyy-MM-dd'),
   });
-  const [originalFormData, setOriginalFormData] = useState<typeof formData | null>(null);
-  const [enhancedFormData, setEnhancedFormData] = useState<typeof formData | null>(null);
-  const [isEnhanced, setIsEnhanced] = useState(false);
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [showMilestones, setShowMilestones] = useState(false);
   const { toast } = useToast();
 
-  const handleEnhanceLetter = async () => {
-    const hasContent = formData.title.trim() || formData.goal.trim() || formData.content.trim();
-    if (!hasContent) {
-      toast({
-        title: "Please enter some content first",
-        description: "Fill in at least one field to enhance your letter.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Store original content before enhancement
-    setOriginalFormData({ ...formData });
-    setIsEnhancing(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('enhance-letter', {
-        body: { 
-          title: formData.title,
-          goal: formData.goal,
-          content: formData.content,
-          send_date: formData.send_date
-        }
-      });
-
-      if (error) throw error;
-      
-      // Auto-apply enhanced content
-      if (data.enhancedLetter) {
-        const enhanced = {
-          ...formData,
-          title: data.enhancedLetter.title,
-          goal: data.enhancedLetter.goal,
-          content: data.enhancedLetter.content,
-        };
-        setEnhancedFormData(enhanced);
-        setFormData(enhanced);
-        setIsEnhanced(true);
-        
-        toast({
-          title: "Letter enhanced and applied!",
-          description: "AI has improved your letter. Use 'Show Original' to revert if needed.",
-        });
-      }
-    } catch (error) {
-      console.error('Error enhancing letter:', error);
-      toast({
-        title: "Enhancement failed",
-        description: "Please try again or continue without enhancement.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
-
-  const toggleContent = () => {
-    if (isEnhanced && originalFormData) {
-      // Currently showing enhanced, switch to original
-      setFormData({ ...originalFormData });
-      setIsEnhanced(false);
-      toast({
-        title: "Showing original content",
-        description: "Switched to your original version.",
-      });
-    } else if (!isEnhanced && enhancedFormData) {
-      // Currently showing original, switch to enhanced
-      setFormData({ ...enhancedFormData });
-      setIsEnhanced(true);
-      toast({
-        title: "Showing enhanced content",
-        description: "Switched to AI-enhanced version.",
-      });
-    }
-  };
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
@@ -157,7 +78,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         title: formData.title,
         content: formData.content,
         goal: formData.goal,
-        ai_enhanced_goal: isEnhanced ? 'true' : null,
         send_date: formData.send_date,
         status: 'scheduled'
       }).select().single();
@@ -394,48 +314,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
               )}
             </div>
 
-            {/* AI Enhancement Section */}
-            <div className="p-4 bg-gradient-to-r from-primary/5 to-primary-glow/5 rounded-lg border border-primary/20">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="font-medium">AI Enhancement</span>
-                  {isEnhanced && (
-                    <Badge variant="secondary" className="bg-success/10 text-success ml-2">
-                      Enhanced
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex space-x-2">
-                  {originalFormData && enhancedFormData && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleContent}
-                    >
-                      Show {isEnhanced ? 'Original' : 'Enhanced'}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleEnhanceLetter}
-                    disabled={isEnhancing}
-                    className="shrink-0"
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    {isEnhancing ? 'Enhancing...' : isEnhanced ? 'Re-enhance' : 'Enhance Letter'}
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {isEnhanced 
-                  ? "Your letter has been enhanced by AI. You can re-enhance or show the original version."
-                  : "Let AI improve your letter's clarity, structure, and emotional impact."
-                }
-              </p>
-            </div>
 
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center space-x-2">
