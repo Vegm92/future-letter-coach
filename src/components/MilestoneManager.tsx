@@ -9,7 +9,7 @@ import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import SuggestedMilestones from "./SuggestedMilestones";
+import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
 
 interface Milestone {
   id: string;
@@ -404,14 +404,22 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
         </DialogContent>
       </Dialog>
 
-      {/* AI Suggested Milestones Dialog */}
-      <SuggestedMilestones
-        isOpen={showSuggestions}
-        onClose={() => setShowSuggestions(false)}
-        letterId={letterId}
-        suggestedMilestones={suggestedMilestones}
-        onMilestonesAdded={handleMilestonesAdded}
-      />
+      {/* AI Suggested Milestones Inline */}
+      {showSuggestions && suggestedMilestones.length > 0 && (
+        <InlineMilestoneSuggestions
+          letterId={letterId}
+          suggestedMilestones={suggestedMilestones}
+          onMilestonesAdded={() => {
+            onUpdate(milestones);
+            setShowSuggestions(false);
+            setSuggestedMilestones([]);
+          }}
+          onClose={() => {
+            setShowSuggestions(false);
+            setSuggestedMilestones([]);
+          }}
+        />
+      )}
     </div>
   );
 };
