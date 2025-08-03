@@ -197,8 +197,8 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
 
       if (error) throw error;
 
-      if (data && Array.isArray(data)) {
-        setSuggestedMilestones(data);
+      if (data && data.suggestedMilestones && Array.isArray(data.suggestedMilestones)) {
+        setSuggestedMilestones(data.suggestedMilestones);
         setShowSuggestions(true);
       } else {
         throw new Error('Invalid response format');
