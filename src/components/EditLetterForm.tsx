@@ -20,6 +20,7 @@ interface Letter {
   send_date: string;
   status: 'draft' | 'scheduled' | 'sent' | 'archived';
   ai_enhanced_goal?: string;
+  ai_enhanced?: boolean;
   voice_memo_url?: string;
   is_locked: boolean;
   created_at: string;
@@ -42,6 +43,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enableEnhancement, setEnableEnhancement] = useState(false);
   const [showEnhancedLetter, setShowEnhancedLetter] = useState(false);
+  const [aiEnhanced, setAiEnhanced] = useState(letter.ai_enhanced || false);
   const { toast } = useToast();
 
   // Use the unified enhancement hook
@@ -109,6 +111,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     setTitle(enhancementData.enhancedLetter.title);
     setGoal(enhancementData.enhancedLetter.goal);
     setContent(enhancementData.enhancedLetter.content);
+    setAiEnhanced(true);
     
     toast({
       title: "All enhancements applied",
@@ -146,6 +149,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
         content: content.trim(),
         goal: goal.trim(),
         send_date: sendDate,
+        ai_enhanced: aiEnhanced,
         ...(enhancedGoal && { ai_enhanced_goal: enhancedGoal }),
       };
 
@@ -217,37 +221,52 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
             </div>
 
             {/* AI Enhancement Section */}
-            <div className="p-4 bg-gradient-to-r from-primary/5 to-primary-glow/5 rounded-lg border border-primary/20">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="font-medium">✨ AI Enhance Letter + Generate Milestones</span>
-                  {enhancementData && (
-                    <Badge variant="secondary" className="bg-success/10 text-success">
-                      Enhanced
-                    </Badge>
-                  )}
+            {!aiEnhanced && (
+              <div className="p-4 bg-gradient-to-r from-primary/5 to-primary-glow/5 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span className="font-medium">✨ AI Enhance Letter + Generate Milestones</span>
+                    {enhancementData && (
+                      <Badge variant="secondary" className="bg-success/10 text-success">
+                        Enhanced
+                      </Badge>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="hero"
+                    onClick={handleEnhanceLetter}
+                    disabled={isEnhancing || !goal.trim() || !title.trim() || !content.trim() || letter.is_locked}
+                    className="shrink-0"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isEnhancing ? 'Enhancing...' : enhancementData ? 'Re-enhance' : 'Enhance & Suggest'}
+                  </Button>
                 </div>
-                <Button
-                  type="button"
-                  variant="hero"
-                  onClick={handleEnhanceLetter}
-                  disabled={isEnhancing || !goal.trim() || !title.trim() || !content.trim() || letter.is_locked}
-                  className="shrink-0"
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {isEnhancing ? 'Enhancing...' : enhancementData ? 'Re-enhance' : 'Enhance & Suggest'}
-                </Button>
+                <p className="text-sm text-muted-foreground">
+                  {enhancementData 
+                    ? `Letter enhanced with ${enhancementData.suggestedMilestones?.length || 0} milestone suggestions. Review and apply changes below.`
+                    : "Get AI-powered improvements to your letter's clarity, structure, and emotional impact, plus personalized milestone suggestions."
+                  }
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {enhancementData 
-                  ? `Letter enhanced with ${enhancementData.suggestedMilestones?.length || 0} milestone suggestions. Review and apply changes below.`
-                  : "Get AI-powered improvements to your letter's clarity, structure, and emotional impact, plus personalized milestone suggestions."
-                }
-              </p>
-            </div>
+            )}
+
+            {aiEnhanced && (
+              <div className="p-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span className="font-medium">AI Enhancement</span>
+                  <Badge variant="secondary">Letter Already Enhanced</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This letter has been enhanced with AI. Each letter can only be enhanced once to maintain authenticity.
+                </p>
+              </div>
+            )}
               
-              {enhancementData?.enhancedLetter && (
+              {!aiEnhanced && enhancementData?.enhancedLetter && (
                 <Collapsible open={showEnhancedLetter} onOpenChange={setShowEnhancedLetter}>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" className="w-full justify-between p-2 h-auto">

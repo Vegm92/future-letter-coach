@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Target, Mic, MicOff, Send, Plus, Trash2 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Calendar, Target, Mic, MicOff, Send, Plus, Trash2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useEnhanceLetterComplete } from "@/hooks/useEnhanceLetterComplete";
 import { addDays, format } from "date-fns";
 
 interface CreateLetterFormProps {
@@ -33,8 +35,25 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [showMilestones, setShowMilestones] = useState(false);
+  const [showEnhancement, setShowEnhancement] = useState(false);
+  const [hasTriggeredEnhancement, setHasTriggeredEnhancement] = useState(false);
+  const [aiEnhanced, setAiEnhanced] = useState(false);
+  
   const { toast } = useToast();
 
+  // AI Enhancement hook
+  const {
+    data: enhancementData,
+    isLoading: isEnhancing,
+    error: enhancementError,
+    refetch: triggerEnhancement
+  } = useEnhanceLetterComplete({
+    title: formData.title,
+    goal: formData.goal,
+    content: formData.content,
+    send_date: formData.send_date,
+    enabled: false // Only run when explicitly triggered
+  });
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
@@ -55,6 +74,47 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
 
   const removeMilestone = (index: number) => {
     setMilestones(milestones.filter((_, i) => i !== index));
+  };
+
+  const handleEnhanceLetter = () => {
+    if (!formData.goal.trim()) {
+      toast({
+        title: "Goal Required",
+        description: "Please enter a goal before enhancing your letter.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setHasTriggeredEnhancement(true);
+    triggerEnhancement();
+  };
+
+  const applyEnhancement = (field: 'title' | 'goal' | 'content') => {
+    if (!enhancementData?.enhancedLetter) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      [field]: enhancementData.enhancedLetter[field]
+    }));
+  };
+
+  const applyAllEnhancements = () => {
+    if (!enhancementData?.enhancedLetter) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      title: enhancementData.enhancedLetter.title,
+      goal: enhancementData.enhancedLetter.goal,
+      content: enhancementData.enhancedLetter.content
+    }));
+
+    // Add suggested milestones if any
+    if (enhancementData.suggestedMilestones?.length > 0) {
+      setMilestones(enhancementData.suggestedMilestones);
+    }
+
+    setAiEnhanced(true);
+    setShowEnhancement(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,7 +139,10 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         content: formData.content,
         goal: formData.goal,
         send_date: formData.send_date,
-        status: 'scheduled'
+        status: 'scheduled',
+        ai_enhanced: aiEnhanced,
+        ai_enhanced_goal: aiEnhanced ? formData.goal : null,
+        voice_memo_url: isRecording ? 'placeholder-url' : null,
       }).select().single();
 
       if (letterError) throw letterError;
@@ -121,7 +184,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
           "Your future self will receive this on the scheduled date.",
       });
       
-      // Pass the letter data to trigger milestone suggestions
       onSuccess(letterData);
       onClose();
     } catch (error) {
@@ -206,6 +268,123 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                 className="min-h-[150px]"
                 required
               />
+            </div>
+
+            {/* AI Enhancement Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <Label className="text-base font-medium">AI Enhancement</Label>
+                  {aiEnhanced && <Badge variant="secondary">Enhanced</Badge>}
+                </div>
+                {!aiEnhanced && (
+                  <Button
+                    type="button"
+                    onClick={handleEnhanceLetter}
+                    disabled={isEnhancing || !formData.goal.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isEnhancing ? "Enhancing..." : "✨ AI Enhance Letter + Generate Milestones"}
+                  </Button>
+                )}
+              </div>
+
+              {enhancementError && (
+                <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">
+                  Error: {enhancementError.message}
+                </div>
+              )}
+
+              {hasTriggeredEnhancement && enhancementData && (
+                <Collapsible open={showEnhancement} onOpenChange={setShowEnhancement}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between p-0">
+                      <span className="text-sm font-medium">View Enhanced Content</span>
+                      {showEnhancement ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 mt-4">
+                    <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Enhanced Title</Label>
+                          <Button
+                            type="button"
+                            onClick={() => applyEnhancement('title')}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                        <div className="text-sm p-3 bg-background border rounded">
+                          {enhancementData.enhancedLetter.title}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Enhanced Goal</Label>
+                          <Button
+                            type="button"
+                            onClick={() => applyEnhancement('goal')}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                        <div className="text-sm p-3 bg-background border rounded">
+                          {enhancementData.enhancedLetter.goal}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-medium">Enhanced Content</Label>
+                          <Button
+                            type="button"
+                            onClick={() => applyEnhancement('content')}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Apply
+                          </Button>
+                        </div>
+                        <div className="text-sm p-3 bg-background border rounded max-h-32 overflow-y-auto">
+                          {enhancementData.enhancedLetter.content}
+                        </div>
+                      </div>
+
+                      {enhancementData.suggestedMilestones?.length > 0 && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Suggested Milestones ({enhancementData.suggestedMilestones.length})
+                          </Label>
+                          <div className="text-xs text-muted-foreground">
+                            Will be added when you apply all enhancements
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          onClick={applyAllEnhancements}
+                          className="w-full"
+                        >
+                          Apply All Enhancements
+                          {enhancementData.suggestedMilestones?.length > 0 && 
+                            ` + Add ${enhancementData.suggestedMilestones.length} Milestones`
+                          }
+                        </Button>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
 
             {/* Milestones Section */}
@@ -313,7 +492,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                 </div>
               )}
             </div>
-
 
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center space-x-2">
