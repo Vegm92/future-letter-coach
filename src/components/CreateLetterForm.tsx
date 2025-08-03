@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,13 +57,15 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   });
 
   // Auto-expand enhancement section when AI enhancement completes successfully
-  if (enhancementSuccess && enhancementData && hasTriggeredEnhancement && !showEnhancement) {
-    setShowEnhancement(true);
-    toast({
-      title: "✨ Letter Enhanced!",
-      description: "Your letter has been enhanced with AI. Review the suggestions below.",
-    });
-  }
+  useEffect(() => {
+    if (enhancementSuccess && enhancementData && hasTriggeredEnhancement && !showEnhancement) {
+      setShowEnhancement(true);
+      toast({
+        title: "✨ Letter Enhanced!",
+        description: "Your letter has been enhanced with AI. Review the suggestions below.",
+      });
+    }
+  }, [enhancementSuccess, enhancementData, hasTriggeredEnhancement, showEnhancement, toast]);
 
   const addMilestone = () => {
     const newMilestone: Milestone = {
