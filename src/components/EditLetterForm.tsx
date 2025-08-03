@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, X, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { Calendar, X, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, AlertCircle, Check, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
@@ -238,74 +238,146 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
                         <div className="flex justify-between items-center">
                           <h4 className="font-medium text-sm">AI Suggestions</h4>
                           <Button
-                            onClick={enhancement.applyAll}
+                            onClick={enhancement.applyAllRemaining}
                             size="sm"
                             className="h-7 px-3 text-xs"
+                            disabled={enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)}
                           >
-                            Apply All
+                            {enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)
+                              ? "All Applied" 
+                              : "Apply All Remaining"
+                            }
                           </Button>
                         </div>
                         
                         {/* Enhanced Title */}
-                        {enhancement.data.enhancedLetter.title !== title && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-xs font-medium text-muted-foreground">Enhanced Title</Label>
-                              <Button
-                                onClick={() => enhancement.applyField('title')}
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                            <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.title}</p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                              Enhanced Title
+                              {enhancement.appliedFields.has('title') && <Check className="h-3 w-3 text-green-500" />}
+                            </Label>
+                            <Button
+                              onClick={() => enhancement.applyField('title')}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              disabled={enhancement.appliedFields.has('title') || enhancement.loadingFields.has('title')}
+                            >
+                              {enhancement.loadingFields.has('title') ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Applying...
+                                </>
+                              ) : enhancement.appliedFields.has('title') ? (
+                                <>
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Applied
+                                </>
+                              ) : (
+                                'Apply'
+                              )}
+                            </Button>
                           </div>
-                        )}
+                          <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.title}</p>
+                        </div>
 
                         {/* Enhanced Goal */}
-                        {enhancement.data.enhancedLetter.goal !== goal && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-xs font-medium text-muted-foreground">Enhanced Goal</Label>
-                              <Button
-                                onClick={() => enhancement.applyField('goal')}
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                            <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.goal}</p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                              Enhanced Goal
+                              {enhancement.appliedFields.has('goal') && <Check className="h-3 w-3 text-green-500" />}
+                            </Label>
+                            <Button
+                              onClick={() => enhancement.applyField('goal')}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              disabled={enhancement.appliedFields.has('goal') || enhancement.loadingFields.has('goal')}
+                            >
+                              {enhancement.loadingFields.has('goal') ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Applying...
+                                </>
+                              ) : enhancement.appliedFields.has('goal') ? (
+                                <>
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Applied
+                                </>
+                              ) : (
+                                'Apply'
+                              )}
+                            </Button>
                           </div>
-                        )}
+                          <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.goal}</p>
+                        </div>
 
                         {/* Enhanced Content */}
-                        {enhancement.data.enhancedLetter.content !== content && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-xs font-medium text-muted-foreground">Enhanced Content</Label>
-                              <Button
-                                onClick={() => enhancement.applyField('content')}
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                              >
-                                Apply
-                              </Button>
-                            </div>
-                            <div className="text-sm bg-background p-2 rounded border max-h-32 overflow-y-auto">
-                              {enhancement.data.enhancedLetter.content}
-                            </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                              Enhanced Content
+                              {enhancement.appliedFields.has('content') && <Check className="h-3 w-3 text-green-500" />}
+                            </Label>
+                            <Button
+                              onClick={() => enhancement.applyField('content')}
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs"
+                              disabled={enhancement.appliedFields.has('content') || enhancement.loadingFields.has('content')}
+                            >
+                              {enhancement.loadingFields.has('content') ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Applying...
+                                </>
+                              ) : enhancement.appliedFields.has('content') ? (
+                                <>
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Applied
+                                </>
+                              ) : (
+                                'Apply'
+                              )}
+                            </Button>
                           </div>
-                        )}
+                          <div className="text-sm bg-background p-2 rounded border max-h-32 overflow-y-auto">
+                            {enhancement.data.enhancedLetter.content}
+                          </div>
+                        </div>
 
                         {/* Suggested Milestones */}
                         {enhancement.data.suggestedMilestones && enhancement.data.suggestedMilestones.length > 0 && (
                           <div className="space-y-2">
-                            <Label className="text-xs font-medium text-muted-foreground">Suggested Milestones</Label>
+                            <div className="flex justify-between items-center">
+                              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                                Suggested Milestones ({enhancement.data.suggestedMilestones.length})
+                                {enhancement.milestonesApplied && <Check className="h-3 w-3 text-green-500" />}
+                              </Label>
+                              <Button
+                                onClick={enhancement.applyMilestones}
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs"
+                                disabled={enhancement.milestonesApplied || enhancement.isApplyingMilestones}
+                              >
+                                {enhancement.isApplyingMilestones ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Applying...
+                                  </>
+                                ) : enhancement.milestonesApplied ? (
+                                  <>
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Applied
+                                  </>
+                                ) : (
+                                  'Apply Milestones'
+                                )}
+                              </Button>
+                            </div>
                             <div className="space-y-2 max-h-32 overflow-y-auto">
                               {enhancement.data.suggestedMilestones.map((milestone, index) => (
                                 <div key={index} className="text-xs bg-background p-2 rounded border">
