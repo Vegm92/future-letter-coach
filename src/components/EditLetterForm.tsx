@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, X, Sparkles, Mic, MicOff } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Calendar, X, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
@@ -39,6 +40,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [enableEnhancement, setEnableEnhancement] = useState(false);
+  const [showEnhancedLetter, setShowEnhancedLetter] = useState(false);
   const { toast } = useToast();
 
   // Use the unified enhancement hook
@@ -54,18 +56,19 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     enabled: enableEnhancement && Boolean(goal?.trim())
   });
 
-  // Update enhanced goal when data is received
+  // Update enhanced goal when data is received and show the enhanced letter section
   useEffect(() => {
     if (enhancementData?.enhancedLetter?.goal) {
       setEnhancedGoal(enhancementData.enhancedLetter.goal);
+      setShowEnhancedLetter(true);
     }
   }, [enhancementData]);
 
-  const handleEnhanceGoal = () => {
-    if (!goal.trim()) {
+  const handleEnhanceLetter = () => {
+    if (!goal.trim() || !title.trim() || !content.trim()) {
       toast({
-        title: "Goal required",
-        description: "Please enter a goal before enhancing it.",
+        title: "Complete letter required",
+        description: "Please fill in title, goal, and content before enhancing.",
         variant: "destructive",
       });
       return;
@@ -75,6 +78,40 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     toast({
       title: "Enhancing your letter...",
       description: "AI is creating an enhanced version with milestone suggestions.",
+    });
+  };
+
+  const applyEnhancement = (field: 'title' | 'goal' | 'content') => {
+    if (!enhancementData?.enhancedLetter) return;
+    
+    switch (field) {
+      case 'title':
+        setTitle(enhancementData.enhancedLetter.title);
+        break;
+      case 'goal':
+        setGoal(enhancementData.enhancedLetter.goal);
+        break;
+      case 'content':
+        setContent(enhancementData.enhancedLetter.content);
+        break;
+    }
+    
+    toast({
+      title: "Enhancement applied",
+      description: `Enhanced ${field} has been applied to your letter.`,
+    });
+  };
+
+  const applyAllEnhancements = () => {
+    if (!enhancementData?.enhancedLetter) return;
+    
+    setTitle(enhancementData.enhancedLetter.title);
+    setGoal(enhancementData.enhancedLetter.goal);
+    setContent(enhancementData.enhancedLetter.content);
+    
+    toast({
+      title: "All enhancements applied",
+      description: "Your entire letter has been enhanced!",
     });
   };
 
@@ -178,36 +215,126 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
               />
             </div>
 
-            {/* Goal */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="edit-goal">Your Goal *</Label>
+            {/* AI Enhancement Section */}
+            <div className="border border-dashed border-primary/30 rounded-lg p-4 bg-primary/5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-primary">AI Letter Enhancement</span>
+                </div>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={handleEnhanceGoal}
-                  disabled={isEnhancing || !goal.trim() || letter.is_locked}
-                  className="h-7 px-2"
+                  onClick={handleEnhanceLetter}
+                  disabled={isEnhancing || !goal.trim() || !title.trim() || !content.trim() || letter.is_locked}
+                  className="h-8"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
-                  {isEnhancing ? "Enhancing..." : "AI Enhance"}
+                  {isEnhancing ? "Enhancing..." : "Enhance Letter"}
                 </Button>
               </div>
+              
+              {enhancementData?.enhancedLetter && (
+                <Collapsible open={showEnhancedLetter} onOpenChange={setShowEnhancedLetter}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                      <span className="font-medium">View Enhanced Letter & Suggestions</span>
+                      {showEnhancedLetter ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 mt-3">
+                    <div className="flex justify-end">
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        onClick={applyAllEnhancements}
+                        className="mb-3"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Apply All Enhancements
+                      </Button>
+                    </div>
+                    
+                    {/* Enhanced Title */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-muted-foreground">ENHANCED TITLE</Label>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => applyEnhancement('title')}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                      <div className="p-2 bg-background border rounded text-sm">
+                        {enhancementData.enhancedLetter.title}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Goal */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-muted-foreground">ENHANCED GOAL</Label>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => applyEnhancement('goal')}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                      <div className="p-2 bg-background border rounded text-sm">
+                        {enhancementData.enhancedLetter.goal}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Content */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-medium text-muted-foreground">ENHANCED CONTENT</Label>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => applyEnhancement('content')}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                      <div className="p-2 bg-background border rounded text-sm max-h-32 overflow-y-auto">
+                        {enhancementData.enhancedLetter.content}
+                      </div>
+                    </div>
+
+                    {/* Milestone Count */}
+                    {enhancementData.suggestedMilestones && enhancementData.suggestedMilestones.length > 0 && (
+                      <div className="text-xs text-muted-foreground bg-secondary/50 p-2 rounded">
+                        ✨ {enhancementData.suggestedMilestones.length} milestone suggestions generated and ready to view
+                      </div>
+                    )}
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+            </div>
+
+            {/* Goal */}
+            <div>
+              <Label htmlFor="edit-goal">Your Goal *</Label>
               <Textarea
                 id="edit-goal"
                 placeholder="What do you want to achieve?"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
                 disabled={letter.is_locked}
-                className="resize-none h-20"
+                className="resize-none h-20 mt-1"
               />
-              {enhancedGoal && (
-                <div className="mt-2 p-3 bg-primary/10 border border-primary/20 rounded-md">
-                  <p className="text-sm font-medium text-primary mb-1">AI Enhanced Goal:</p>
-                  <p className="text-sm">{enhancedGoal}</p>
-                </div>
-              )}
             </div>
 
             {/* Content */}
