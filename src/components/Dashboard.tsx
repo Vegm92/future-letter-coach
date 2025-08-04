@@ -14,11 +14,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface DashboardProps {
-  onCreateClick: () => void;
-  onViewAllLetters: () => void;
-}
+import { DashboardProps } from "@/types";
 
 const Dashboard = ({ onCreateClick, onViewAllLetters }: DashboardProps) => {
   const [stats, setStats] = useState({

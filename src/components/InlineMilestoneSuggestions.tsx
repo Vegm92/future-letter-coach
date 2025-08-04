@@ -13,19 +13,7 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { SuggestedMilestone } from "@/types";
-
-interface InlineMilestoneSuggestionsProps {
-  letterId: string;
-  suggestedMilestones: SuggestedMilestone[];
-  onMilestonesAdded: () => void;
-  onClose: () => void;
-}
-
-interface MilestoneState extends SuggestedMilestone {
-  selected: boolean;
-  editing: boolean;
-}
+import { SuggestedMilestone, InlineMilestoneSuggestionsProps, MilestoneState } from "@/types";
 
 const InlineMilestoneSuggestions = ({
   letterId,

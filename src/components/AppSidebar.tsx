@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AppSidebarProps } from "@/types";
 
 const navigationItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -34,11 +35,6 @@ const navigationItems = [
   { title: "Create Letter", url: "/create", icon: Plus },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
-
-interface AppSidebarProps {
-  user: any;
-  onCreateClick: () => void;
-}
 
 export function AppSidebar({ user, onCreateClick }: AppSidebarProps) {
   const { state } = useSidebar();

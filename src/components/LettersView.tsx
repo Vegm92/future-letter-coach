@@ -11,11 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import LetterCard from "./LetterCard";
 import LetterDetail from "./LetterDetail";
 import EditLetterForm from "./EditLetterForm";
-
-interface LettersViewProps {
-  onCreateClick: () => void;
-  refreshTrigger?: number;
-}
+import { LettersViewProps } from "@/types";
 
 const LettersView = ({ onCreateClick, refreshTrigger }: LettersViewProps) => {
   const [letters, setLetters] = useState<any[]>([]);

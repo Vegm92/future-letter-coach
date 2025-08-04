@@ -36,3 +36,66 @@ export interface MilestoneState extends SuggestedMilestone {
   selected: boolean;
   editing: boolean;
 }
+
+// Additional component props extracted from individual files
+export interface AppSidebarProps {
+  user: any;
+  onCreateClick: () => void;
+}
+
+export interface AuthFormProps {
+  onBack: () => void;
+}
+
+export interface DashboardProps {
+  onCreateClick: () => void;
+  onViewAllLetters: () => void;
+}
+
+export interface HeaderProps {
+  user: any;
+  onCreateClick: () => void;
+}
+
+export interface HeroSectionProps {
+  onGetStarted: () => void;
+}
+
+export interface LettersViewProps {
+  onCreateClick: () => void;
+  refreshTrigger?: number;
+}
+
+export interface VisionVaultProps {
+  onCreateClick: () => void;
+}
+
+// Component prop interfaces from component summaries
+export interface InlineMilestoneSuggestionsProps {
+  letterId: string;
+  suggestedMilestones: SuggestedMilestone[];
+  onMilestonesAdded: () => void;
+  onClose: () => void;
+}
+
+export interface MilestoneManagerProps {
+  letterId: string;
+  milestones: Milestone[];
+  onUpdate: (milestones: Milestone[]) => void;
+  letter?: {
+    title: string;
+    goal: string;
+    content: string;
+    send_date: string;
+  };
+}
+
+export interface LetterDetailProps {
+  letter: Letter;
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: (letter: Letter) => void;
+  onUpdate: (updatedLetter: Letter) => void;
+  onPlay?: (url: string) => void;
+  onDelete?: (letter: Letter) => void;
+}

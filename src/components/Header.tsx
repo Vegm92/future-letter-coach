@@ -2,11 +2,7 @@ import { Button } from "@/components/ui/button";
 import { User, PenTool, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface HeaderProps {
-  user: any;
-  onCreateClick: () => void;
-}
+import { HeaderProps } from "@/types";
 
 const Header = ({ user, onCreateClick }: HeaderProps) => {
   const { toast } = useToast();

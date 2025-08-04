@@ -11,18 +11,8 @@ import { Calendar, Target, Clock, Edit, X, Save, Play, Trash2 } from "lucide-rea
 import { format, differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Letter, Milestone } from "@/types";
+import { Letter, Milestone, LetterDetailProps } from "@/types";
 import MilestoneManager from "./MilestoneManager";
-
-interface LetterDetailProps {
-  letter: Letter;
-  isOpen: boolean;
-  onClose: () => void;
-  onEdit: (letter: Letter) => void;
-  onUpdate: (updatedLetter: Letter) => void;
-  onPlay?: (url: string) => void;
-  onDelete?: (letter: Letter) => void;
-}
 
 const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDelete }: LetterDetailProps) => {
   const [personalComments, setPersonalComments] = useState(letter.personal_comments || "");

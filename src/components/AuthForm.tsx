@@ -7,10 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-interface AuthFormProps {
-  onBack: () => void;
-}
+import { AuthFormProps } from "@/types";
 
 const AuthForm = ({ onBack }: AuthFormProps) => {
   const [isLoading, setIsLoading] = useState(false);

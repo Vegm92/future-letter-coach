@@ -19,10 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import LetterCard from "./LetterCard";
 import LetterDetail from "./LetterDetail";
 import EditLetterForm from "./EditLetterForm";
-
-interface VisionVaultProps {
-  onCreateClick: () => void;
-}
+import { VisionVaultProps } from "@/types";
 
 const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
   const [letters, setLetters] = useState<any[]>([]);

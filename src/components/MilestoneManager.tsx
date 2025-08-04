@@ -9,20 +9,8 @@ import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Milestone } from "@/types";
+import { Milestone, MilestoneManagerProps } from "@/types";
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
-
-interface MilestoneManagerProps {
-  letterId: string;
-  milestones: Milestone[];
-  onUpdate: (milestones: Milestone[]) => void;
-  letter?: {
-    title: string;
-    goal: string;
-    content: string;
-    send_date: string;
-  };
-}
 
 const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneManagerProps) => {
   const [isOpen, setIsOpen] = useState(false);
