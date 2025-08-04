@@ -2,21 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "lucide-react";
-
-interface FormFieldProps {
-  id: string;
-  label: string;
-  type?: 'input' | 'textarea' | 'date';
-  value: string;
-  placeholder?: string;
-  disabled?: boolean;
-  onChange: (value: string) => void;
-  required?: boolean;
-  className?: string;
-  rows?: number;
-  min?: string;
-  helpText?: string;
-}
+import type { FormFieldProps } from "@/types/components";
 
 export const FormField = ({
   id,
@@ -36,35 +22,40 @@ export const FormField = ({
     onChange(e.target.value);
   };
 
+  const isTextarea = type === 'textarea';
+  const isDateField = type === 'date';
+  const showCalendarIcon = isDateField;
+  const inputType = isDateField ? 'date' : 'text';
+
   return (
     <div>
       <Label htmlFor={id}>
         {label} {required && '*'}
       </Label>
-      <div className={`relative ${type === 'date' ? 'mt-1' : ''}`}>
-        {type === 'textarea' ? (
+      <div className={`relative ${isDateField ? 'mt-1' : ''}`}>
+        {isTextarea ? (
           <Textarea
             id={id}
             placeholder={placeholder}
             value={value}
             onChange={handleChange}
             disabled={disabled}
-            className={`resize-none ${className} ${type === 'textarea' ? 'mt-1' : ''}`}
+            className={`resize-none ${className} ${!isDateField ? 'mt-1' : ''}`}
             rows={rows}
           />
         ) : (
           <Input
             id={id}
-            type={type === 'date' ? 'date' : 'text'}
+            type={inputType}
             placeholder={placeholder}
             value={value}
             onChange={handleChange}
             disabled={disabled}
             min={min}
-            className={`${type === 'date' ? 'pl-10' : ''} ${className} ${type === 'input' ? 'mt-1' : ''}`}
+            className={`${isDateField ? 'pl-10' : ''} ${className} ${type === 'input' ? 'mt-1' : ''}`}
           />
         )}
-        {type === 'date' && (
+        {showCalendarIcon && (
           <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         )}
       </div>

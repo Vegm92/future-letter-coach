@@ -1,16 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Check, Loader2 } from "lucide-react";
-
-interface EnhancedFieldProps {
-  label: string;
-  value: string;
-  fieldKey: string;
-  isApplied: boolean;
-  isLoading: boolean;
-  onApply: () => void;
-  className?: string;
-}
+import type { EnhancedFieldProps } from "@/types/components";
 
 export const EnhancedField = ({ 
   label, 
@@ -21,6 +12,8 @@ export const EnhancedField = ({
   onApply,
   className = ""
 }: EnhancedFieldProps) => {
+  const buttonText = isLoading ? 'Applying...' : isApplied ? 'Applied' : 'Apply';
+  const isDisabled = isApplied || isLoading;
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-center">
@@ -33,21 +26,11 @@ export const EnhancedField = ({
           size="sm"
           variant="outline"
           className="h-6 px-2 text-xs"
-          disabled={isApplied || isLoading}
+          disabled={isDisabled}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              Applying...
-            </>
-          ) : isApplied ? (
-            <>
-              <Check className="h-3 w-3 mr-1" />
-              Applied
-            </>
-          ) : (
-            'Apply'
-          )}
+          {isLoading && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+          {isApplied && <Check className="h-3 w-3 mr-1" />}
+          {buttonText}
         </Button>
       </div>
       <div className={`text-sm bg-background p-2 rounded border ${className}`}>

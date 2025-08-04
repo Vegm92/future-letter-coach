@@ -1,14 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Check, Loader2 } from "lucide-react";
-import type { SuggestedMilestone } from "@/types";
-
-interface MilestoneSuggestionListProps {
-  milestones: SuggestedMilestone[];
-  isApplied: boolean;
-  isApplying: boolean;
-  onApply: () => void;
-}
+import type { MilestoneSuggestionListProps } from "@/types/components";
 
 export const MilestoneSuggestionList = ({
   milestones,
@@ -17,6 +10,9 @@ export const MilestoneSuggestionList = ({
   onApply
 }: MilestoneSuggestionListProps) => {
   if (!milestones?.length) return null;
+
+  const buttonText = isApplying ? 'Applying...' : isApplied ? 'Applied' : 'Apply Milestones';
+  const isDisabled = isApplied || isApplying;
 
   return (
     <div className="space-y-2">
@@ -30,21 +26,11 @@ export const MilestoneSuggestionList = ({
           size="sm"
           variant="outline"
           className="h-6 px-2 text-xs"
-          disabled={isApplied || isApplying}
+          disabled={isDisabled}
         >
-          {isApplying ? (
-            <>
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-              Applying...
-            </>
-          ) : isApplied ? (
-            <>
-              <Check className="h-3 w-3 mr-1" />
-              Applied
-            </>
-          ) : (
-            'Apply Milestones'
-          )}
+          {isApplying && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+          {isApplied && <Check className="h-3 w-3 mr-1" />}
+          {buttonText}
         </Button>
       </div>
       <div className="space-y-2 max-h-32 overflow-y-auto">

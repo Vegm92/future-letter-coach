@@ -128,6 +128,11 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
 
   const canEditSendDate = !letter.is_locked && letter.status !== 'sent';
   const canEnhance = !letter.ai_enhanced && !letter.is_locked;
+  
+  // Early return for locked letter message
+  const lockedMessage = letter.is_locked ? "This letter is locked and cannot be edited (within 48 hours of send date)" : null;
+  const submitButtonText = isSubmitting ? "Updating..." : "Update Letter";
+  const isSubmitDisabled = isSubmitting || letter.is_locked;
 
   // Helper render functions
   const renderFormFields = () => (
@@ -200,16 +205,16 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
         </Button>
         <Button
           type="submit"
-          disabled={isSubmitting || letter.is_locked}
+          disabled={isSubmitDisabled}
           className="min-w-[120px]"
         >
-          {isSubmitting ? "Updating..." : "Update Letter"}
+          {submitButtonText}
         </Button>
       </div>
 
-      {letter.is_locked && (
+      {lockedMessage && (
         <div className="text-xs text-muted-foreground text-center pt-2">
-          This letter is locked and cannot be edited (within 48 hours of send date)
+          {lockedMessage}
         </div>
       )}
     </>

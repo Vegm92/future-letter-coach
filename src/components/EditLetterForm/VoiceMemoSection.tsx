@@ -1,13 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Mic, MicOff } from "lucide-react";
-
-interface VoiceMemoSectionProps {
-  isRecording: boolean;
-  isLocked: boolean;
-  hasVoiceMemo: boolean;
-  onToggleRecording: () => void;
-}
+import type { VoiceMemoSectionProps } from "@/types/components";
 
 export const VoiceMemoSection = ({
   isRecording,
@@ -15,6 +9,9 @@ export const VoiceMemoSection = ({
   hasVoiceMemo,
   onToggleRecording
 }: VoiceMemoSectionProps) => {
+  const buttonIcon = isRecording ? MicOff : Mic;
+  const buttonText = isRecording ? "Stop Recording" : "Record Voice Memo";
+  const IconComponent = buttonIcon;
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -27,17 +24,8 @@ export const VoiceMemoSection = ({
           disabled={isLocked}
           className="h-8 px-2"
         >
-          {isRecording ? (
-            <>
-              <MicOff className="h-3 w-3 mr-1" />
-              Stop Recording
-            </>
-          ) : (
-            <>
-              <Mic className="h-3 w-3 mr-1" />
-              Record Voice Memo
-            </>
-          )}
+          <IconComponent className="h-3 w-3 mr-1" />
+          {buttonText}
         </Button>
       </div>
       {hasVoiceMemo && (

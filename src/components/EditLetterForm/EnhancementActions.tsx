@@ -2,13 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, AlertCircle } from "lucide-react";
-
-interface EnhancementActionsProps {
-  state: 'idle' | 'loading' | 'success' | 'error';
-  canEnhance: boolean;
-  onEnhance: () => void;
-  onRetry: () => void;
-}
+import type { EnhancementActionsProps } from "@/types/components";
 
 export const EnhancementActions = ({
   state,
@@ -16,13 +10,16 @@ export const EnhancementActions = ({
   onEnhance,
   onRetry
 }: EnhancementActionsProps) => {
+  const isLoading = state === 'loading';
+  const isSuccess = state === 'success';
+  const isError = state === 'error';
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <Label className="text-base font-medium">AI Enhancement</Label>
-          {state === 'success' && <Badge variant="secondary">Enhanced</Badge>}
+          {isSuccess && <Badge variant="secondary">Enhanced</Badge>}
         </div>
         <Button
           type="button"
@@ -31,7 +28,7 @@ export const EnhancementActions = ({
           variant="outline"
           size="sm"
         >
-          {state === 'loading' ? (
+          {isLoading ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               Enhancing...
@@ -45,8 +42,7 @@ export const EnhancementActions = ({
         </Button>
       </div>
 
-      {/* Enhancement Error */}
-      {state === 'error' && (
+      {isError && (
         <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

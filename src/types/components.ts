@@ -99,3 +99,55 @@ export interface LetterDetailProps {
   onPlay?: (url: string) => void;
   onDelete?: (letter: Letter) => void;
 }
+
+// EditLetterForm sub-component interfaces
+export interface EnhancedFieldProps {
+  label: string;
+  value: string;
+  fieldKey: string;
+  isApplied: boolean;
+  isLoading: boolean;
+  onApply: () => void;
+  className?: string;
+}
+
+export interface MilestoneSuggestionListProps {
+  milestones: SuggestedMilestone[];
+  isApplied: boolean;
+  isApplying: boolean;
+  onApply: () => void;
+}
+
+export interface EnhancementActionsProps {
+  state: 'idle' | 'loading' | 'success' | 'error';
+  canEnhance: boolean;
+  onEnhance: () => void;
+  onRetry: () => void;
+}
+
+export interface VoiceMemoSectionProps {
+  isRecording: boolean;
+  isLocked: boolean;
+  hasVoiceMemo: boolean;
+  onToggleRecording: () => void;
+}
+
+export interface FormFieldProps {
+  id: string;
+  label: string;
+  type?: 'input' | 'textarea' | 'date';
+  value: string;
+  placeholder?: string;
+  disabled?: boolean;
+  onChange: (value: string) => void;
+  required?: boolean;
+  className?: string;
+  rows?: number;
+  min?: string;
+  helpText?: string;
+}
+
+export interface EnhancementSectionProps {
+  enhancement: ReturnType<typeof import('@/hooks/useSmartEnhancement').useSmartEnhancement>;
+  canEnhance: boolean;
+}

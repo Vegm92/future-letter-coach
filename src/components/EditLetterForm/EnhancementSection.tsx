@@ -4,15 +4,15 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { EnhancedField } from "./EnhancedField";
 import { MilestoneSuggestionList } from "./MilestoneSuggestionList";
 import { EnhancementActions } from "./EnhancementActions";
-import type { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
-
-interface EnhancementSectionProps {
-  enhancement: ReturnType<typeof useSmartEnhancement>;
-  canEnhance: boolean;
-}
+import type { EnhancementSectionProps } from "@/types/components";
 
 export const EnhancementSection = ({ enhancement, canEnhance }: EnhancementSectionProps) => {
   if (!canEnhance) return null;
+
+  const hasEnhancementData = enhancement.hasEnhancementData && enhancement.data;
+  const allFieldsApplied = enhancement.appliedFields.size === 3;
+  const noMilestones = !enhancement.data?.suggestedMilestones?.length;
+  const allApplied = allFieldsApplied && (noMilestones || enhancement.milestonesApplied);
 
   return (
     <div className="space-y-4">
@@ -23,8 +23,7 @@ export const EnhancementSection = ({ enhancement, canEnhance }: EnhancementSecti
         onRetry={enhancement.retry}
       />
       
-      {/* Enhancement Results */}
-      {enhancement.hasEnhancementData && enhancement.data && (
+      {hasEnhancementData && (
         <Collapsible open={enhancement.isExpanded} onOpenChange={enhancement.setIsExpanded}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
@@ -40,12 +39,9 @@ export const EnhancementSection = ({ enhancement, canEnhance }: EnhancementSecti
                   onClick={enhancement.applyAllRemaining}
                   size="sm"
                   className="h-7 px-3 text-xs"
-                  disabled={enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)}
+                  disabled={allApplied}
                 >
-                  {enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)
-                    ? "All Applied" 
-                    : "Apply All Remaining"
-                  }
+                  {allApplied ? "All Applied" : "Apply All Remaining"}
                 </Button>
               </div>
               
