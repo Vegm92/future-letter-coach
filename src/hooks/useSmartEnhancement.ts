@@ -18,6 +18,12 @@ interface EnhancementData {
   }>;
 }
 
+interface CachedEnhancement {
+  inputHash: string;
+  data: EnhancementData;
+  timestamp: number;
+}
+
 interface UseSmartEnhancementProps {
   title: string;
   goal: string;
@@ -36,6 +42,9 @@ interface EnhancementState {
   loadingFields: Set<FieldType>;
   milestonesApplied: boolean;
   isApplyingMilestones: boolean;
+  cachedEnhancements: Record<string, CachedEnhancement>;
+  lastInputHash: string | null;
+  isUsingCache: boolean;
 }
 
 export const useSmartEnhancement = ({
@@ -55,11 +64,34 @@ export const useSmartEnhancement = ({
     loadingFields: new Set(),
     milestonesApplied: false,
     isApplyingMilestones: false,
+    cachedEnhancements: {},
+    lastInputHash: null,
+    isUsingCache: false,
   });
   
   const { toast } = useToast();
 
-  const fetchEnhancement = useCallback(async () => {
+  // Generate a hash from form inputs to use as cache key
+  const generateInputHash = useCallback((title: string, goal: string, content: string, send_date: string) => {
+    const inputString = `${title.trim()}|${goal.trim()}|${content.trim()}|${send_date}`;
+    return btoa(inputString).replace(/[^a-zA-Z0-9]/g, ''); // Simple base64 hash, cleaned
+  }, []);
+
+  // Check if we have cached data for current inputs
+  const getCachedEnhancement = useCallback((inputHash: string): CachedEnhancement | null => {
+    const cached = enhancementState.cachedEnhancements[inputHash];
+    if (!cached) return null;
+    
+    // Optional: Check if cache is not too old (1 hour)
+    const oneHour = 60 * 60 * 1000;
+    if (Date.now() - cached.timestamp > oneHour) {
+      return null;
+    }
+    
+    return cached;
+  }, [enhancementState.cachedEnhancements]);
+
+  const fetchEnhancement = useCallback(async (inputHash: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('enhance-letter-complete', {
         body: { title, goal, content, send_date }
@@ -67,12 +99,25 @@ export const useSmartEnhancement = ({
 
       if (error) throw error;
 
+      // Store the result in cache
+      const cachedResult: CachedEnhancement = {
+        inputHash,
+        data,
+        timestamp: Date.now()
+      };
+
       setEnhancementState(prev => ({
         ...prev,
         status: 'success',
         data,
         showSuggestions: true,
-        isExpanded: true
+        isExpanded: true,
+        cachedEnhancements: {
+          ...prev.cachedEnhancements,
+          [inputHash]: cachedResult
+        },
+        lastInputHash: inputHash,
+        isUsingCache: false
       }));
 
       toast({
@@ -96,6 +141,34 @@ export const useSmartEnhancement = ({
   const enhance = useCallback(async () => {
     if (enhancementState.status === 'loading') return;
     
+    // Generate hash from current inputs
+    const currentInputHash = generateInputHash(title, goal, content, send_date);
+    
+    // Check if we have cached data for these inputs
+    const cachedData = getCachedEnhancement(currentInputHash);
+    
+    if (cachedData) {
+      // Use cached data
+      setEnhancementState(prev => ({
+        ...prev,
+        status: 'success',
+        data: cachedData.data,
+        showSuggestions: true,
+        isExpanded: true,
+        lastInputHash: currentInputHash,
+        isUsingCache: true,
+        appliedFields: new Set(),
+        milestonesApplied: false
+      }));
+
+      toast({
+        title: "✨ Cached Enhancement Restored!",
+        description: "Using previously generated suggestions for these inputs.",
+      });
+      return;
+    }
+    
+    // No cache found, proceed with API call
     setEnhancementState(prev => ({
       ...prev,
       status: 'loading',
@@ -103,11 +176,12 @@ export const useSmartEnhancement = ({
       isExpanded: false,
       data: null,
       appliedFields: new Set(),
-      milestonesApplied: false
+      milestonesApplied: false,
+      isUsingCache: false
     }));
 
-    await fetchEnhancement();
-  }, [enhancementState.status, fetchEnhancement]);
+    await fetchEnhancement(currentInputHash);
+  }, [enhancementState.status, generateInputHash, getCachedEnhancement, fetchEnhancement, title, goal, content, send_date, toast]);
 
   const applyField = useCallback(async (field: FieldType) => {
     if (!enhancementState.data?.enhancedLetter) return;
