@@ -13,13 +13,7 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-interface SuggestedMilestone {
-  title: string;
-  percentage: number;
-  target_date: string;
-  description: string;
-}
+import { SuggestedMilestone } from "@/types";
 
 interface InlineMilestoneSuggestionsProps {
   letterId: string;

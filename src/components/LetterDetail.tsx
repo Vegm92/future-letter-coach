@@ -11,30 +11,8 @@ import { Calendar, Target, Clock, Edit, X, Save, Play, Trash2 } from "lucide-rea
 import { format, differenceInDays, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Letter, Milestone } from "@/types";
 import MilestoneManager from "./MilestoneManager";
-
-interface Letter {
-  id: string;
-  title: string;
-  content: string;
-  goal: string;
-  send_date: string;
-  status: 'draft' | 'scheduled' | 'sent' | 'archived';
-  ai_enhanced_goal?: string;
-  voice_memo_url?: string;
-  is_locked: boolean;
-  created_at: string;
-  personal_comments?: string;
-  milestones?: Milestone[];
-}
-
-interface Milestone {
-  id: string;
-  title: string;
-  percentage: number;
-  completed: boolean;
-  target_date: string;
-}
 
 interface LetterDetailProps {
   letter: Letter;

@@ -9,16 +9,8 @@ import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Milestone } from "@/types";
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
-
-interface Milestone {
-  id: string;
-  title: string;
-  percentage: number;
-  completed: boolean;
-  target_date: string;
-  description?: string;
-}
 
 interface MilestoneManagerProps {
   letterId: string;
