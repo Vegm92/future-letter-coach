@@ -7,38 +7,8 @@ import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell, Trash2 } from "
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useState } from "react";
 
-interface Letter {
-  id: string;
-  title: string;
-  content: string;
-  goal: string;
-  send_date: string;
-  status: 'draft' | 'scheduled' | 'sent' | 'archived';
-  ai_enhanced_goal?: string;
-  voice_memo_url?: string;
-  is_locked: boolean;
-  created_at: string;
-  milestones?: Milestone[];
-}
-
-interface Milestone {
-  id: string;
-  title: string;
-  percentage: number;
-  completed: boolean;
-  target_date: string;
-}
-
-
-interface LetterCardProps {
-  letter: Letter;
-  onEdit: (letter: Letter) => void;
-  onPlay?: (url: string) => void;
-  onView: (letter: Letter) => void;
-  onTriggerDelivery?: (letter: Letter) => void;
-  onStatusChange?: (letter: Letter, newStatus: string) => void;
-  onDelete?: (letter: Letter) => void;
-}
+import type { Letter } from '@/types/database';
+import type { LetterCardProps } from '@/types/components';
 
 const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatusChange, onDelete }: LetterCardProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);

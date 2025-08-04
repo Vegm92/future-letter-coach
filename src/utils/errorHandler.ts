@@ -1,11 +1,5 @@
 import { ERROR_MESSAGES } from '@/lib/constants';
-import type { NotificationService } from '@/services/notificationService';
-
-export interface ErrorContext {
-  operation: string;
-  timestamp?: string;
-  [key: string]: any;
-}
+import type { ErrorContext, NotificationService } from '@/types/services';
 
 export class ErrorHandler {
   constructor(private notificationService: NotificationService) {}

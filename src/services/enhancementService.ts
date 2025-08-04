@@ -1,30 +1,5 @@
 import { ENHANCEMENT_CONFIG } from '@/lib/constants';
-
-export interface EnhancementParams {
-  title: string;
-  goal: string;
-  content: string;
-  send_date: string;
-}
-
-export interface EnhancementData {
-  enhancedLetter: {
-    title: string;
-    goal: string;
-    content: string;
-  };
-  suggestedMilestones: Array<{
-    title: string;
-    description: string;
-    percentage: number;
-    target_date: string;
-  }>;
-}
-
-export interface EnhancementService {
-  fetchEnhancement(params: EnhancementParams): Promise<EnhancementData>;
-  generateInputHash(inputs: EnhancementParams): string;
-}
+import type { EnhancementParams, EnhancementData, EnhancementService } from '@/types/services';
 
 export class SupabaseEnhancementService implements EnhancementService {
   constructor(private supabaseClient: any) {}

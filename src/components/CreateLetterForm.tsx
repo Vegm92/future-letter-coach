@@ -12,17 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 import { addDays, format } from "date-fns";
 
-interface CreateLetterFormProps {
-  onClose: () => void;
-  onSuccess: (letterData?: any) => void;
-}
-
-interface Milestone {
-  title: string;
-  percentage: number;
-  target_date: string;
-  description: string;
-}
+import type { CreateLetterFormProps } from '@/types/components';
+import type { CreateMilestone } from '@/types/database';
 
 const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   const [formData, setFormData] = useState({
@@ -33,7 +24,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   });
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestones, setMilestones] = useState<CreateMilestone[]>([]);
   const [showMilestones, setShowMilestones] = useState(false);
   
   const { toast } = useToast();
@@ -58,7 +49,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   });
 
   const addMilestone = () => {
-    const newMilestone: Milestone = {
+    const newMilestone: CreateMilestone = {
       title: '',
       percentage: 25,
       target_date: format(addDays(new Date(), 7), 'yyyy-MM-dd'),
@@ -67,7 +58,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     setMilestones([...milestones, newMilestone]);
   };
 
-  const updateMilestone = (index: number, field: keyof Milestone, value: string | number) => {
+  const updateMilestone = (index: number, field: keyof CreateMilestone, value: string | number) => {
     const updated = milestones.map((milestone, i) => 
       i === index ? { ...milestone, [field]: value } : milestone
     );

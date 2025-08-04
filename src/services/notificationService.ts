@@ -1,14 +1,4 @@
-export interface NotificationMessage {
-  title: string;
-  description: string;
-  variant?: "default" | "destructive";
-}
-
-export interface NotificationService {
-  success(message: NotificationMessage): void;
-  error(message: NotificationMessage): void;
-  info(message: NotificationMessage): void;
-}
+import type { NotificationMessage, NotificationService } from '@/types/services';
 
 export class ToastNotificationService implements NotificationService {
   constructor(private toast: (options: any) => void) {}

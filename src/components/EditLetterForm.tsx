@@ -12,26 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 
-interface Letter {
-  id: string;
-  title: string;
-  content: string;
-  goal: string;
-  send_date: string;
-  status: 'draft' | 'scheduled' | 'sent' | 'archived';
-  ai_enhanced_goal?: string;
-  ai_enhanced?: boolean;
-  voice_memo_url?: string;
-  is_locked: boolean;
-  created_at: string;
-  personal_comments?: string;
-}
-
-interface EditLetterFormProps {
-  letter: Letter;
-  onClose: () => void;
-  onSuccess: (updatedLetter: Letter) => void;
-}
+import type { Letter } from '@/types/database';
+import type { EditLetterFormProps } from '@/types/components';
 
 const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => {
   const [title, setTitle] = useState(letter.title);

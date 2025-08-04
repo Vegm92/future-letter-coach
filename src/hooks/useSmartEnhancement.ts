@@ -2,41 +2,16 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { FORM_FIELDS, ENHANCEMENT_CONFIG, ERROR_MESSAGES, type FieldType } from '@/lib/constants';
-import type { EnhancementService, EnhancementData } from '@/services/enhancementService';
 import { SupabaseEnhancementService } from '@/services/enhancementService';
-import type { NotificationService } from '@/services/notificationService';
 import { ToastNotificationService } from '@/services/notificationService';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { CacheManager } from '@/utils/cacheManager';
-
-interface UseSmartEnhancementProps {
-  title: string;
-  goal: string;
-  content: string;
-  send_date: string;
-  onApplyField: (field: FieldType, value: string) => void;
-  onApplyMilestones?: (milestones: any[]) => void;
-}
-
-interface EnhancementState {
-  status: 'idle' | 'loading' | 'success' | 'error';
-  data: EnhancementData | null;
-  showSuggestions: boolean;
-  isExpanded: boolean;
-  appliedFields: Set<FieldType>;
-  loadingFields: Set<FieldType>;
-  milestonesApplied: boolean;
-  isApplyingMilestones: boolean;
-  lastInputHash: string | null;
-  isUsingCache: boolean;
-}
-
-interface UseSmartEnhancementDeps {
-  enhancementService?: EnhancementService;
-  notificationService?: NotificationService;
-  errorHandler?: ErrorHandler;
-  cacheManager?: CacheManager<EnhancementData>;
-}
+import type { 
+  UseSmartEnhancementProps, 
+  EnhancementState, 
+  UseSmartEnhancementDeps 
+} from '@/types/hooks';
+import type { EnhancementData } from '@/types/services';
 
 export const useSmartEnhancement = (
   {

@@ -14,25 +14,8 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface SuggestedMilestone {
-  title: string;
-  percentage: number;
-  target_date: string;
-  description: string;
-}
-
-interface SuggestedMilestonesProps {
-  isOpen: boolean;
-  onClose: () => void;
-  letterId: string;
-  suggestedMilestones: SuggestedMilestone[];
-  onMilestonesAdded: () => void;
-}
-
-interface MilestoneState extends SuggestedMilestone {
-  selected: boolean;
-  editing: boolean;
-}
+import type { SuggestedMilestone } from '@/types/database';
+import type { SuggestedMilestonesProps, MilestoneState } from '@/types/components';
 
 const SuggestedMilestones = ({
   isOpen,

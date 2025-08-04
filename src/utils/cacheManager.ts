@@ -1,8 +1,4 @@
-interface CachedItem<T> {
-  data: T;
-  timestamp: number;
-  expirationHours: number;
-}
+import type { CachedItem } from '@/types/database';
 
 export class CacheManager<T> {
   private cache = new Map<string, CachedItem<T>>();
