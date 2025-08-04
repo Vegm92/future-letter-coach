@@ -13,10 +13,10 @@ import { format, parseISO } from "date-fns";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 
 // Sub-components
-import { EnhancedField } from "./EditLetterForm/EnhancedField";
-import { MilestoneSuggestionList } from "./EditLetterForm/MilestoneSuggestionList";
-import { EnhancementActions } from "./EditLetterForm/EnhancementActions";
+import { EnhancementSection } from "./EditLetterForm/EnhancementSection";
 import { VoiceMemoSection } from "./EditLetterForm/VoiceMemoSection";
+import { AlreadyEnhancedNotice } from "./EditLetterForm/AlreadyEnhancedNotice";
+import { FormField } from "./EditLetterForm/FormField";
 
 import type { Letter, EditLetterFormProps } from '@/types';
 
@@ -147,159 +147,56 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div>
-              <Label htmlFor="edit-title">Letter Title *</Label>
-              <Input
-                id="edit-title"
-                placeholder="Give your letter a meaningful title..."
-                value={formData.title}
-                onChange={(e) => updateFormData('title', e.target.value)}
-                disabled={letter.is_locked}
-                className="mt-1"
-              />
-            </div>
+            <FormField
+              id="edit-title"
+              label="Letter Title"
+              value={formData.title}
+              placeholder="Give your letter a meaningful title..."
+              disabled={letter.is_locked}
+              onChange={(value) => updateFormData('title', value)}
+              required
+            />
 
-            {/* Goal */}
-            <div>
-              <Label htmlFor="edit-goal">Your Goal *</Label>
-              <Textarea
-                id="edit-goal"
-                placeholder="What do you want to achieve?"
-                value={formData.goal}
-                onChange={(e) => updateFormData('goal', e.target.value)}
-                disabled={letter.is_locked}
-                className="resize-none h-20 mt-1"
-              />
-            </div>
+            <FormField
+              id="edit-goal"
+              label="Your Goal"
+              type="textarea"
+              value={formData.goal}
+              placeholder="What do you want to achieve?"
+              disabled={letter.is_locked}
+              onChange={(value) => updateFormData('goal', value)}
+              required
+              rows={3}
+            />
 
-            {/* Content */}
-            <div>
-              <Label htmlFor="edit-content">Letter Content *</Label>
-              <Textarea
-                id="edit-content"
-                placeholder="Write your letter to your future self..."
-                value={formData.content}
-                onChange={(e) => updateFormData('content', e.target.value)}
-                disabled={letter.is_locked}
-                className="resize-none h-32 mt-1"
-              />
-            </div>
+            <FormField
+              id="edit-content"
+              label="Letter Content"
+              type="textarea"
+              value={formData.content}
+              placeholder="Write your letter to your future self..."
+              disabled={letter.is_locked}
+              onChange={(value) => updateFormData('content', value)}
+              required
+              rows={5}
+            />
 
-            {/* AI Enhancement Section */}
-            {canEnhance && (
-              <div className="space-y-4">
-                <EnhancementActions
-                  state={enhancement.state}
-                  canEnhance={enhancement.canEnhance}
-                  onEnhance={enhancement.enhance}
-                  onRetry={enhancement.retry}
-                />
-                
-                {/* Enhancement Results */}
-                {enhancement.hasEnhancementData && enhancement.data && (
-                  <Collapsible open={enhancement.isExpanded} onOpenChange={enhancement.setIsExpanded}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
-                        <span className="text-sm font-medium">✨ View Enhanced Content</span>
-                        {enhancement.isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="space-y-4 pt-4">
-                      <div className="space-y-4 rounded-lg bg-muted/50 p-4">
-                        <div className="flex justify-between items-center">
-                          <h4 className="font-medium text-sm">AI Suggestions</h4>
-                          <Button
-                            onClick={enhancement.applyAllRemaining}
-                            size="sm"
-                            className="h-7 px-3 text-xs"
-                            disabled={enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)}
-                          >
-                            {enhancement.appliedFields.size === 3 && (!enhancement.data?.suggestedMilestones?.length || enhancement.milestonesApplied)
-                              ? "All Applied" 
-                              : "Apply All Remaining"
-                            }
-                          </Button>
-                        </div>
-                        
-                        <EnhancedField
-                          label="Enhanced Title"
-                          value={enhancement.data.enhancedLetter.title}
-                          fieldKey="title"
-                          isApplied={enhancement.appliedFields.has('title')}
-                          isLoading={enhancement.loadingFields.has('title')}
-                          onApply={() => enhancement.applyField('title')}
-                        />
+            <EnhancementSection enhancement={enhancement} canEnhance={canEnhance} />
 
-                        <EnhancedField
-                          label="Enhanced Goal"
-                          value={enhancement.data.enhancedLetter.goal}
-                          fieldKey="goal"
-                          isApplied={enhancement.appliedFields.has('goal')}
-                          isLoading={enhancement.loadingFields.has('goal')}
-                          onApply={() => enhancement.applyField('goal')}
-                        />
+            {letter.ai_enhanced && <AlreadyEnhancedNotice />}
 
-                        <EnhancedField
-                          label="Enhanced Content"
-                          value={enhancement.data.enhancedLetter.content}
-                          fieldKey="content"
-                          isApplied={enhancement.appliedFields.has('content')}
-                          isLoading={enhancement.loadingFields.has('content')}
-                          onApply={() => enhancement.applyField('content')}
-                          className="max-h-32 overflow-y-auto"
-                        />
+            <FormField
+              id="edit-send-date"
+              label="Send Date"
+              type="date"
+              value={formData.sendDate}
+              disabled={!canEditSendDate}
+              onChange={(value) => updateFormData('sendDate', value)}
+              required
+              min={format(new Date(), 'yyyy-MM-dd')}
+              helpText={!canEditSendDate ? "Send date cannot be changed (letter is locked or already sent)" : undefined}
+            />
 
-                        <MilestoneSuggestionList
-                          milestones={enhancement.data.suggestedMilestones || []}
-                          isApplied={enhancement.milestonesApplied}
-                          isApplying={enhancement.isApplyingMilestones}
-                          onApply={enhancement.applyMilestones}
-                        />
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
-            )}
-
-            {/* Already Enhanced Notice */}
-            {letter.ai_enhanced && (
-              <div className="p-4 bg-muted/50 rounded-lg border">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                  <span className="font-medium">AI Enhancement</span>
-                  <Badge variant="secondary">Already Enhanced</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  This letter has been enhanced with AI. Each letter can only be enhanced once to maintain authenticity.
-                </p>
-              </div>
-            )}
-
-            {/* Send Date */}
-            <div>
-              <Label htmlFor="edit-send-date">Send Date *</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="edit-send-date"
-                  type="date"
-                  value={formData.sendDate}
-                  onChange={(e) => updateFormData('sendDate', e.target.value)}
-                  disabled={!canEditSendDate}
-                  min={format(new Date(), 'yyyy-MM-dd')}
-                  className="pl-10"
-                />
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              </div>
-              {!canEditSendDate && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Send date cannot be changed (letter is locked or already sent)
-                </p>
-              )}
-            </div>
-
-            {/* Voice Memo */}
             <VoiceMemoSection
               isRecording={isRecording}
               isLocked={letter.is_locked}
