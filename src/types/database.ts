@@ -2,6 +2,7 @@
 
 export interface Letter {
   id: string;
+  user_id: string;
   title: string;
   content: string;
   goal: string;
@@ -19,7 +20,7 @@ export interface Letter {
 export interface Milestone {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   percentage: number;
   completed: boolean;
   target_date: string;
