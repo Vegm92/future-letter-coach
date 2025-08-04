@@ -224,31 +224,55 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accessibility_preferences: Json | null
+          ai_preferences: Json | null
+          avatar_url: string | null
           created_at: string
+          default_goal_format: string | null
+          default_letter_template: string | null
+          default_send_date_offset: number | null
           email: string | null
           full_name: string | null
           id: string
+          language: string | null
           notification_preferences: Json | null
+          privacy_settings: Json | null
           timezone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          accessibility_preferences?: Json | null
+          ai_preferences?: Json | null
+          avatar_url?: string | null
           created_at?: string
+          default_goal_format?: string | null
+          default_letter_template?: string | null
+          default_send_date_offset?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
+          language?: string | null
           notification_preferences?: Json | null
+          privacy_settings?: Json | null
           timezone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          accessibility_preferences?: Json | null
+          ai_preferences?: Json | null
+          avatar_url?: string | null
           created_at?: string
+          default_goal_format?: string | null
+          default_letter_template?: string | null
+          default_send_date_offset?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
+          language?: string | null
           notification_preferences?: Json | null
+          privacy_settings?: Json | null
           timezone?: string | null
           updated_at?: string
           user_id?: string
