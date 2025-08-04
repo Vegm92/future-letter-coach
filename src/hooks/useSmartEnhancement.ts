@@ -72,15 +72,15 @@ export const useSmartEnhancement = ({
   const { toast } = useToast();
 
   // Generate a hash from form inputs to use as cache key
-  const generateInputHash = useCallback((title: string, goal: string, content: string, send_date: string) => {
+  const generateInputHash = (title: string, goal: string, content: string, send_date: string) => {
     const inputString = `${title.trim()}|${goal.trim()}|${content.trim()}|${send_date}`;
     // Handle Unicode characters by encoding to UTF-8 first
     const encodedString = encodeURIComponent(inputString);
     return btoa(encodedString).replace(/[^a-zA-Z0-9]/g, ''); // Simple base64 hash, cleaned
-  }, []);
+  };
 
   // Check if we have cached data for current inputs
-  const getCachedEnhancement = useCallback((inputHash: string): CachedEnhancement | null => {
+  const getCachedEnhancement = (inputHash: string): CachedEnhancement | null => {
     const cached = enhancementState.cachedEnhancements[inputHash];
     if (!cached) return null;
     
@@ -91,7 +91,7 @@ export const useSmartEnhancement = ({
     }
     
     return cached;
-  }, [enhancementState.cachedEnhancements]);
+  };
 
   const fetchEnhancement = useCallback(async (inputHash: string) => {
     try {
@@ -288,16 +288,14 @@ export const useSmartEnhancement = ({
     });
   }, [enhancementState, applyField, applyMilestones, onApplyMilestones, toast]);
 
-  const retry = useCallback(() => {
-    enhance();
-  }, [enhance]);
+  const retry = () => enhance();
 
-  const setIsExpanded = useCallback((expanded: boolean) => {
+  const setIsExpanded = (expanded: boolean) => {
     setEnhancementState(prev => ({
       ...prev,
       isExpanded: expanded
     }));
-  }, []);
+  };
 
   // Check if we already have enhancement data for current inputs
   const currentInputHash = generateInputHash(title, goal, content, send_date);
