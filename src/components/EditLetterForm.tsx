@@ -6,11 +6,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Calendar, X, Sparkles, Mic, MicOff, ChevronDown, ChevronUp, AlertCircle, Check, Loader2 } from "lucide-react";
+import { Calendar, X, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
+
+// Sub-components
+import { EnhancedField } from "./EditLetterForm/EnhancedField";
+import { MilestoneSuggestionList } from "./EditLetterForm/MilestoneSuggestionList";
+import { EnhancementActions } from "./EditLetterForm/EnhancementActions";
+import { VoiceMemoSection } from "./EditLetterForm/VoiceMemoSection";
 
 import type { Letter, EditLetterFormProps } from '@/types';
 
@@ -183,47 +189,12 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
             {/* AI Enhancement Section */}
             {canEnhance && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <Label className="text-base font-medium">AI Enhancement</Label>
-                    {enhancement.state === 'success' && <Badge variant="secondary">Enhanced</Badge>}
-                  </div>
-                  <Button
-                    type="button"
-                    onClick={enhancement.enhance}
-                    disabled={!enhancement.canEnhance}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {enhancement.state === 'loading' ? (
-                      <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        Enhancing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Enhance with AI
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Enhancement Error */}
-                {enhancement.state === 'error' && (
-                  <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-destructive" />
-                        <p className="text-sm text-destructive">Enhancement failed. Please try again.</p>
-                      </div>
-                      <Button onClick={enhancement.retry} size="sm" variant="outline">
-                        Retry
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                <EnhancementActions
+                  state={enhancement.state}
+                  canEnhance={enhancement.canEnhance}
+                  onEnhance={enhancement.enhance}
+                  onRetry={enhancement.retry}
+                />
                 
                 {/* Enhancement Results */}
                 {enhancement.hasEnhancementData && enhancement.data && (
@@ -251,145 +222,40 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
                           </Button>
                         </div>
                         
-                        {/* Enhanced Title */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                              Enhanced Title
-                              {enhancement.appliedFields.has('title') && <Check className="h-3 w-3 text-green-500" />}
-                            </Label>
-                            <Button
-                              onClick={() => enhancement.applyField('title')}
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              disabled={enhancement.appliedFields.has('title') || enhancement.loadingFields.has('title')}
-                            >
-                              {enhancement.loadingFields.has('title') ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Applying...
-                                </>
-                              ) : enhancement.appliedFields.has('title') ? (
-                                <>
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Applied
-                                </>
-                              ) : (
-                                'Apply'
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.title}</p>
-                        </div>
+                        <EnhancedField
+                          label="Enhanced Title"
+                          value={enhancement.data.enhancedLetter.title}
+                          fieldKey="title"
+                          isApplied={enhancement.appliedFields.has('title')}
+                          isLoading={enhancement.loadingFields.has('title')}
+                          onApply={() => enhancement.applyField('title')}
+                        />
 
-                        {/* Enhanced Goal */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                              Enhanced Goal
-                              {enhancement.appliedFields.has('goal') && <Check className="h-3 w-3 text-green-500" />}
-                            </Label>
-                            <Button
-                              onClick={() => enhancement.applyField('goal')}
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              disabled={enhancement.appliedFields.has('goal') || enhancement.loadingFields.has('goal')}
-                            >
-                              {enhancement.loadingFields.has('goal') ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Applying...
-                                </>
-                              ) : enhancement.appliedFields.has('goal') ? (
-                                <>
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Applied
-                                </>
-                              ) : (
-                                'Apply'
-                              )}
-                            </Button>
-                          </div>
-                          <p className="text-sm bg-background p-2 rounded border">{enhancement.data.enhancedLetter.goal}</p>
-                        </div>
+                        <EnhancedField
+                          label="Enhanced Goal"
+                          value={enhancement.data.enhancedLetter.goal}
+                          fieldKey="goal"
+                          isApplied={enhancement.appliedFields.has('goal')}
+                          isLoading={enhancement.loadingFields.has('goal')}
+                          onApply={() => enhancement.applyField('goal')}
+                        />
 
-                        {/* Enhanced Content */}
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                              Enhanced Content
-                              {enhancement.appliedFields.has('content') && <Check className="h-3 w-3 text-green-500" />}
-                            </Label>
-                            <Button
-                              onClick={() => enhancement.applyField('content')}
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs"
-                              disabled={enhancement.appliedFields.has('content') || enhancement.loadingFields.has('content')}
-                            >
-                              {enhancement.loadingFields.has('content') ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Applying...
-                                </>
-                              ) : enhancement.appliedFields.has('content') ? (
-                                <>
-                                  <Check className="h-3 w-3 mr-1" />
-                                  Applied
-                                </>
-                              ) : (
-                                'Apply'
-                              )}
-                            </Button>
-                          </div>
-                          <div className="text-sm bg-background p-2 rounded border max-h-32 overflow-y-auto">
-                            {enhancement.data.enhancedLetter.content}
-                          </div>
-                        </div>
+                        <EnhancedField
+                          label="Enhanced Content"
+                          value={enhancement.data.enhancedLetter.content}
+                          fieldKey="content"
+                          isApplied={enhancement.appliedFields.has('content')}
+                          isLoading={enhancement.loadingFields.has('content')}
+                          onApply={() => enhancement.applyField('content')}
+                          className="max-h-32 overflow-y-auto"
+                        />
 
-                        {/* Suggested Milestones */}
-                        {enhancement.data.suggestedMilestones && enhancement.data.suggestedMilestones.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                Suggested Milestones ({enhancement.data.suggestedMilestones.length})
-                                {enhancement.milestonesApplied && <Check className="h-3 w-3 text-green-500" />}
-                              </Label>
-                              <Button
-                                onClick={enhancement.applyMilestones}
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-xs"
-                                disabled={enhancement.milestonesApplied || enhancement.isApplyingMilestones}
-                              >
-                                {enhancement.isApplyingMilestones ? (
-                                  <>
-                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                    Applying...
-                                  </>
-                                ) : enhancement.milestonesApplied ? (
-                                  <>
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Applied
-                                  </>
-                                ) : (
-                                  'Apply Milestones'
-                                )}
-                              </Button>
-                            </div>
-                            <div className="space-y-2 max-h-32 overflow-y-auto">
-                              {enhancement.data.suggestedMilestones.map((milestone, index) => (
-                                <div key={index} className="text-xs bg-background p-2 rounded border">
-                                  <div className="font-medium">{milestone.title}</div>
-                                  <div className="text-muted-foreground">{milestone.description}</div>
-                                  <div className="text-muted-foreground">Target: {new Date(milestone.target_date).toLocaleDateString()}</div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        <MilestoneSuggestionList
+                          milestones={enhancement.data.suggestedMilestones || []}
+                          isApplied={enhancement.milestonesApplied}
+                          isApplying={enhancement.isApplyingMilestones}
+                          onApply={enhancement.applyMilestones}
+                        />
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
@@ -434,36 +300,12 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
             </div>
 
             {/* Voice Memo */}
-            <div>
-              <div className="flex items-center justify-between">
-                <Label>Voice Memo (Optional)</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleRecording}
-                  disabled={letter.is_locked}
-                  className="h-8 px-2"
-                >
-                  {isRecording ? (
-                    <>
-                      <MicOff className="h-3 w-3 mr-1" />
-                      Stop Recording
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="h-3 w-3 mr-1" />
-                      Record Voice Memo
-                    </>
-                  )}
-                </Button>
-              </div>
-              {letter.voice_memo_url && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Voice memo attached to this letter
-                </p>
-              )}
-            </div>
+            <VoiceMemoSection
+              isRecording={isRecording}
+              isLocked={letter.is_locked}
+              hasVoiceMemo={!!letter.voice_memo_url}
+              onToggleRecording={toggleRecording}
+            />
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-4 border-t">
