@@ -24,6 +24,14 @@ const DashboardWrapper = () => {
         window.dispatchEvent(event);
       }} 
       onViewAllLetters={() => navigate('/letters')} 
+      onViewLetter={(letter) => {
+        // Navigate to letters page and trigger letter view
+        navigate('/letters');
+        setTimeout(() => {
+          const event = new CustomEvent('viewLetter', { detail: letter });
+          window.dispatchEvent(event);
+        }, 100);
+      }}
     />
   );
 };

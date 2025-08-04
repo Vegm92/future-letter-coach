@@ -50,6 +50,7 @@ export interface AuthFormProps {
 export interface DashboardProps {
   onCreateClick: () => void;
   onViewAllLetters: () => void;
+  onViewLetter: (letter: Letter) => void;
 }
 
 export interface HeaderProps {

@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardProps } from "@/types";
 
-const Dashboard = ({ onCreateClick, onViewAllLetters }: DashboardProps) => {
+const Dashboard = ({ onCreateClick, onViewAllLetters, onViewLetter }: DashboardProps) => {
   const [stats, setStats] = useState({
     total: 0,
     scheduled: 0,
@@ -205,7 +205,8 @@ const Dashboard = ({ onCreateClick, onViewAllLetters }: DashboardProps) => {
                 {recentLetters.map((letter) => (
                   <div
                     key={letter.id}
-                    className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/30 transition-colors"
+                    onClick={() => onViewLetter(letter)}
+                    className="flex items-center justify-between p-3 rounded-md border hover:bg-muted/30 transition-colors cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate text-sm">{letter.title}</p>
