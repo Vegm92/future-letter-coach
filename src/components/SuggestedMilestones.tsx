@@ -14,8 +14,7 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-import type { SuggestedMilestone } from '@/types/database';
-import type { SuggestedMilestonesProps, MilestoneState } from '@/types/components';
+import type { SuggestedMilestone, SuggestedMilestonesProps, MilestoneState } from '@/types';
 
 const SuggestedMilestones = ({
   isOpen,

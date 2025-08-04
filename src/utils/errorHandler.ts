@@ -1,5 +1,5 @@
 import { ERROR_MESSAGES } from '@/lib/constants';
-import type { ErrorContext, NotificationService } from '@/types/services';
+import type { ErrorContext, NotificationService } from '@/types';
 
 export class ErrorHandler {
   constructor(private notificationService: NotificationService) {}

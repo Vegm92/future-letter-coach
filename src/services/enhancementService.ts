@@ -1,5 +1,5 @@
 import { ENHANCEMENT_CONFIG } from '@/lib/constants';
-import type { EnhancementParams, EnhancementData, EnhancementService } from '@/types/services';
+import type { EnhancementParams, EnhancementData, EnhancementService } from '@/types';
 
 export class SupabaseEnhancementService implements EnhancementService {
   constructor(private supabaseClient: any) {}

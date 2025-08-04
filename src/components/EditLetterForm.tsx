@@ -12,8 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 
-import type { Letter } from '@/types/database';
-import type { EditLetterFormProps } from '@/types/components';
+import type { Letter, EditLetterFormProps } from '@/types';
 
 const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => {
   const [title, setTitle] = useState(letter.title);

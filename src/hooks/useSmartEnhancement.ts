@@ -9,9 +9,9 @@ import { CacheManager } from '@/utils/cacheManager';
 import type { 
   UseSmartEnhancementProps, 
   EnhancementState, 
-  UseSmartEnhancementDeps 
-} from '@/types/hooks';
-import type { EnhancementData } from '@/types/services';
+  UseSmartEnhancementDeps,
+  EnhancementData
+} from '@/types';
 
 export const useSmartEnhancement = (
   {

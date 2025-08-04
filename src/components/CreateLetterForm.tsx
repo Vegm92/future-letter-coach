@@ -12,8 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 import { addDays, format } from "date-fns";
 
-import type { CreateLetterFormProps } from '@/types/components';
-import type { CreateMilestone } from '@/types/database';
+import type { CreateLetterFormProps, CreateMilestone } from '@/types';
 
 const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   const [formData, setFormData] = useState({

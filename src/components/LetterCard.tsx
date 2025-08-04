@@ -7,8 +7,7 @@ import { Calendar, Target, Clock, Edit, Play, Pause, Send, Bell, Trash2 } from "
 import { format, differenceInDays, parseISO } from "date-fns";
 import { useState } from "react";
 
-import type { Letter } from '@/types/database';
-import type { LetterCardProps } from '@/types/components';
+import type { Letter, LetterCardProps } from '@/types';
 
 const LetterCard = ({ letter, onEdit, onPlay, onView, onTriggerDelivery, onStatusChange, onDelete }: LetterCardProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);

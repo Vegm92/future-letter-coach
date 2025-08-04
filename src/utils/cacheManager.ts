@@ -1,4 +1,4 @@
-import type { CachedItem } from '@/types/database';
+import type { CachedItem } from '@/types';
 
 export class CacheManager<T> {
   private cache = new Map<string, CachedItem<T>>();

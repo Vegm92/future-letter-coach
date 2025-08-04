@@ -1,4 +1,4 @@
-import type { NotificationMessage, NotificationService } from '@/types/services';
+import type { NotificationMessage, NotificationService } from '@/types';
 
 export class ToastNotificationService implements NotificationService {
   constructor(private toast: (options: any) => void) {}
