@@ -1,28 +1,13 @@
 import { useState, useCallback } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-type FieldType = 'title' | 'goal' | 'content';
-
-interface EnhancementData {
-  enhancedLetter: {
-    title: string;
-    goal: string;
-    content: string;
-  };
-  suggestedMilestones: Array<{
-    title: string;
-    percentage: number;
-    target_date: string;
-    description: string;
-  }>;
-}
-
-interface CachedEnhancement {
-  inputHash: string;
-  data: EnhancementData;
-  timestamp: number;
-}
+import { useToast } from '@/hooks/use-toast';
+import { FORM_FIELDS, ENHANCEMENT_CONFIG, ERROR_MESSAGES, type FieldType } from '@/lib/constants';
+import type { EnhancementService, EnhancementData } from '@/services/enhancementService';
+import { SupabaseEnhancementService } from '@/services/enhancementService';
+import type { NotificationService } from '@/services/notificationService';
+import { ToastNotificationService } from '@/services/notificationService';
+import { ErrorHandler } from '@/utils/errorHandler';
+import { CacheManager } from '@/utils/cacheManager';
 
 interface UseSmartEnhancementProps {
   title: string;
@@ -42,19 +27,36 @@ interface EnhancementState {
   loadingFields: Set<FieldType>;
   milestonesApplied: boolean;
   isApplyingMilestones: boolean;
-  cachedEnhancements: Record<string, CachedEnhancement>;
   lastInputHash: string | null;
   isUsingCache: boolean;
 }
 
-export const useSmartEnhancement = ({
-  title,
-  goal,
-  content,
-  send_date,
-  onApplyField,
-  onApplyMilestones
-}: UseSmartEnhancementProps) => {
+interface UseSmartEnhancementDeps {
+  enhancementService?: EnhancementService;
+  notificationService?: NotificationService;
+  errorHandler?: ErrorHandler;
+  cacheManager?: CacheManager<EnhancementData>;
+}
+
+export const useSmartEnhancement = (
+  {
+    title,
+    goal,
+    content,
+    send_date,
+    onApplyField,
+    onApplyMilestones
+  }: UseSmartEnhancementProps,
+  deps?: UseSmartEnhancementDeps
+) => {
+  const { toast } = useToast();
+  
+  // Use injected dependencies or create defaults
+  const enhancementService = deps?.enhancementService || new SupabaseEnhancementService(supabase);
+  const notificationService = deps?.notificationService || new ToastNotificationService(toast);
+  const errorHandler = deps?.errorHandler || new ErrorHandler(notificationService);
+  const cacheManager = deps?.cacheManager || new CacheManager<EnhancementData>();
+
   const [enhancementState, setEnhancementState] = useState<EnhancementState>({
     status: 'idle',
     data: null,
@@ -64,152 +66,84 @@ export const useSmartEnhancement = ({
     loadingFields: new Set(),
     milestonesApplied: false,
     isApplyingMilestones: false,
-    cachedEnhancements: {},
     lastInputHash: null,
     isUsingCache: false,
   });
-  
-  const { toast } = useToast();
 
-  // Generate a hash from form inputs to use as cache key
-  const generateInputHash = (title: string, goal: string, content: string, send_date: string) => {
-    const inputString = `${title.trim()}|${goal.trim()}|${content.trim()}|${send_date}`;
-    // Handle Unicode characters by encoding to UTF-8 first
-    const encodedString = encodeURIComponent(inputString);
-    return btoa(encodedString).replace(/[^a-zA-Z0-9]/g, ''); // Simple base64 hash, cleaned
-  };
+  // Check if we have a cached enhancement for current inputs
+  const getCachedEnhancement = useCallback((inputHash: string): EnhancementData | null => {
+    return cacheManager.get(inputHash);
+  }, [cacheManager]);
 
-  // Check if we have cached data for current inputs
-  const getCachedEnhancement = (inputHash: string): CachedEnhancement | null => {
-    const cached = enhancementState.cachedEnhancements[inputHash];
-    if (!cached) return null;
-    
-    // Optional: Check if cache is not too old (1 hour)
-    const oneHour = 60 * 60 * 1000;
-    if (Date.now() - cached.timestamp > oneHour) {
-      return null;
-    }
-    
-    return cached;
-  };
+  // Function to fetch enhancement from service
+  const fetchEnhancement = useCallback(async (title: string, goal: string, content: string, sendDate: string): Promise<EnhancementData> => {
+    return enhancementService.fetchEnhancement({ title, goal, content, send_date: sendDate });
+  }, [enhancementService]);
 
-  const fetchEnhancement = useCallback(async (inputHash: string) => {
+  const fetchEnhancementWithHash = useCallback(async (inputHash: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('enhance-letter-complete', {
-        body: { title, goal, content, send_date }
-      });
-
-      if (error) throw error;
-
-      // Store the result in cache
-      const cachedResult: CachedEnhancement = {
-        inputHash,
-        data,
-        timestamp: Date.now()
-      };
-
+      const data = await fetchEnhancement(title, goal, content, send_date);
+      
+      // Cache the result
+      cacheManager.set(inputHash, data, ENHANCEMENT_CONFIG.CACHE_EXPIRATION_HOURS);
+      
       setEnhancementState(prev => ({
         ...prev,
         status: 'success',
         data,
         showSuggestions: true,
         isExpanded: true,
-        cachedEnhancements: {
-          ...prev.cachedEnhancements,
-          [inputHash]: cachedResult
-        },
         lastInputHash: inputHash,
         isUsingCache: false
       }));
 
-      toast({
-        title: "✨ Letter Enhanced!",
-        description: "Your letter has been enhanced with AI. Review the suggestions below.",
-      });
+      notificationService.success(ERROR_MESSAGES.ENHANCEMENT_SUCCESS);
     } catch (error: any) {
-      // Detailed error logging with context
-      console.error('[SmartEnhancement] Enhancement fetch failed:', {
-        operation: 'fetchEnhancement',
-        timestamp: new Date().toISOString(),
+      setEnhancementState(prev => ({
+        ...prev,
+        status: 'error'
+      }));
+
+      errorHandler.handleError(error, 'fetchEnhancement', {
         inputHash,
         formData: { 
           titleLength: title.length, 
           goalLength: goal.length, 
           contentLength: content.length,
           sendDate: send_date 
-        },
-        error: {
-          name: error?.name || 'Unknown',
-          message: error?.message || 'No error message',
-          code: error?.code,
-          details: error?.details,
-          hint: error?.hint,
-          stack: error?.stack
         }
       });
-
-      setEnhancementState(prev => ({
-        ...prev,
-        status: 'error'
-      }));
-
-      // Determine error type and provide specific feedback
-      let errorTitle = "Enhancement Failed";
-      let errorDescription = "Unable to enhance your letter. Please try again.";
-      
-      if (error?.message?.includes('network') || error?.message?.includes('fetch')) {
-        errorTitle = "Network Error";
-        errorDescription = "Please check your internet connection and try again.";
-      } else if (error?.code === 'FUNCTION_INVOCATION_FAILED') {
-        errorTitle = "Service Temporarily Unavailable";
-        errorDescription = "The enhancement service is currently unavailable. Please try again in a few moments.";
-      } else if (error?.message?.includes('rate limit') || error?.code === 429) {
-        errorTitle = "Rate Limit Exceeded";
-        errorDescription = "Too many enhancement requests. Please wait a moment before trying again.";
-      } else if (error?.message?.includes('authentication') || error?.code === 401) {
-        errorTitle = "Authentication Error";
-        errorDescription = "Please refresh the page and try again.";
-      }
-
-      toast({
-        title: errorTitle,
-        description: errorDescription,
-        variant: "destructive"
-      });
     }
-  }, [title, goal, content, send_date, toast]);
+  }, [title, goal, content, send_date, fetchEnhancement, cacheManager, notificationService, errorHandler]);
 
+  // Main enhancement function
   const enhance = useCallback(async () => {
     if (enhancementState.status === 'loading') return;
     
-    // Generate hash from current inputs
-    const currentInputHash = generateInputHash(title, goal, content, send_date);
+    const inputHash = enhancementService.generateInputHash({ title, goal, content, send_date });
     
-    // Check if we have cached data for these inputs
-    const cachedData = getCachedEnhancement(currentInputHash);
-    
-    if (cachedData) {
-      // Use cached data
+    // Check cache first
+    const cached = getCachedEnhancement(inputHash);
+    if (cached) {
       setEnhancementState(prev => ({
         ...prev,
         status: 'success',
-        data: cachedData.data,
+        data: cached,
         showSuggestions: true,
         isExpanded: true,
-        lastInputHash: currentInputHash,
-        isUsingCache: true,
         appliedFields: new Set(),
-        milestonesApplied: false
+        milestonesApplied: false,
+        lastInputHash: inputHash,
+        isUsingCache: true
       }));
-
-      toast({
+      
+      notificationService.info({
         title: "✨ Cached Enhancement Restored!",
-        description: "Using previously generated suggestions for these inputs.",
+        description: "Using previously generated suggestions for these inputs."
       });
       return;
     }
-    
-    // No cache found, proceed with API call
+
     setEnhancementState(prev => ({
       ...prev,
       status: 'loading',
@@ -221,11 +155,14 @@ export const useSmartEnhancement = ({
       isUsingCache: false
     }));
 
-    await fetchEnhancement(currentInputHash);
-  }, [enhancementState.status, generateInputHash, getCachedEnhancement, fetchEnhancement, title, goal, content, send_date, toast]);
+    await fetchEnhancementWithHash(inputHash);
+  }, [enhancementState.status, enhancementService, getCachedEnhancement, fetchEnhancementWithHash, title, goal, content, send_date, notificationService]);
 
+  // Apply individual field enhancement
   const applyField = useCallback(async (field: FieldType) => {
     if (!enhancementState.data?.enhancedLetter) return;
+
+    const value = enhancementState.data.enhancedLetter[field];
     
     setEnhancementState(prev => ({
       ...prev,
@@ -233,128 +170,101 @@ export const useSmartEnhancement = ({
     }));
     
     try {
-      const value = enhancementState.data.enhancedLetter[field];
-      await new Promise(resolve => setTimeout(resolve, 300)); // Brief loading state
-      onApplyField(field, value);
+      // Apply with a small delay to ensure smooth UX
+      await new Promise(resolve => setTimeout(resolve, ENHANCEMENT_CONFIG.APPLY_FIELD_DELAY));
       
+      onApplyField(field, value);
+
       setEnhancementState(prev => ({
         ...prev,
         appliedFields: new Set([...prev.appliedFields, field]),
         loadingFields: new Set([...prev.loadingFields].filter(f => f !== field))
       }));
-      
-      toast({
-        title: "✅ Enhancement Applied",
-        description: `Updated ${field} with AI suggestion.`,
+
+      notificationService.success({
+        ...ERROR_MESSAGES.FIELD_APPLIED,
+        description: `Updated ${field} with AI suggestion.`
       });
     } catch (error: any) {
-      // Detailed error logging for field application
-      console.error('[SmartEnhancement] Field application failed:', {
-        operation: 'applyField',
-        timestamp: new Date().toISOString(),
-        field,
-        value: enhancementState.data?.enhancedLetter[field]?.substring(0, 100) + '...',
-        error: {
-          name: error?.name || 'Unknown',
-          message: error?.message || 'No error message',
-          stack: error?.stack
-        }
-      });
-
-      toast({
-        title: "Failed to Apply Enhancement",
-        description: `Could not apply ${field} enhancement. The form may be locked or there was a validation error.`,
-        variant: "destructive"
-      });
-      
       setEnhancementState(prev => ({
         ...prev,
         loadingFields: new Set([...prev.loadingFields].filter(f => f !== field))
       }));
+      
+      errorHandler.handleFieldApplicationError(error, field, value);
     }
-  }, [enhancementState.data, onApplyField, toast]);
+  }, [enhancementState.data, onApplyField, notificationService, errorHandler]);
 
+  // Apply milestone suggestions
   const applyMilestones = useCallback(async () => {
     if (!enhancementState.data?.suggestedMilestones?.length || !onApplyMilestones || enhancementState.milestonesApplied) return;
-    
+
     setEnhancementState(prev => ({
       ...prev,
       isApplyingMilestones: true
     }));
-    
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Brief loading state
-      onApplyMilestones(enhancementState.data.suggestedMilestones);
+      // Apply with a slightly longer delay for milestones
+      await new Promise(resolve => setTimeout(resolve, ENHANCEMENT_CONFIG.APPLY_MILESTONES_DELAY));
       
+      onApplyMilestones(enhancementState.data.suggestedMilestones);
+
       setEnhancementState(prev => ({
         ...prev,
         milestonesApplied: true,
         isApplyingMilestones: false
       }));
-      
-      toast({
-        title: "✅ Milestones Applied",
-        description: `Added ${enhancementState.data.suggestedMilestones.length} suggested milestones.`,
+
+      notificationService.success({
+        ...ERROR_MESSAGES.MILESTONES_APPLIED,
+        description: `Added ${enhancementState.data.suggestedMilestones.length} suggested milestones.`
       });
     } catch (error: any) {
-      // Detailed error logging for milestone application
-      console.error('[SmartEnhancement] Milestone application failed:', {
-        operation: 'applyMilestones',
-        timestamp: new Date().toISOString(),
-        milestoneCount: enhancementState.data?.suggestedMilestones?.length || 0,
-        milestones: enhancementState.data?.suggestedMilestones?.map(m => ({ 
-          title: m.title, 
-          percentage: m.percentage 
-        })),
-        error: {
-          name: error?.name || 'Unknown',
-          message: error?.message || 'No error message',
-          stack: error?.stack
-        }
-      });
-
-      toast({
-        title: "Failed to Apply Milestones",
-        description: "Could not apply suggested milestones. There may be a validation error or the form is locked.",
-        variant: "destructive"
-      });
-      
       setEnhancementState(prev => ({
         ...prev,
         isApplyingMilestones: false
       }));
+      
+      errorHandler.handleMilestoneApplicationError(
+        error, 
+        enhancementState.data?.suggestedMilestones?.length || 0,
+        enhancementState.data?.suggestedMilestones
+      );
     }
-  }, [enhancementState.data, enhancementState.milestonesApplied, onApplyMilestones, toast]);
+  }, [enhancementState.data, enhancementState.milestonesApplied, onApplyMilestones, notificationService, errorHandler]);
 
+  // Apply all remaining enhancements
   const applyAllRemaining = useCallback(async () => {
     if (!enhancementState.data?.enhancedLetter) return;
-    
-    const fieldsToApply: FieldType[] = (['title', 'goal', 'content'] as FieldType[])
-      .filter(field => !enhancementState.appliedFields.has(field) && enhancementState.data!.enhancedLetter[field] !== '');
-    
-    if (fieldsToApply.length === 0 && (enhancementState.milestonesApplied || !enhancementState.data.suggestedMilestones?.length)) {
-      toast({
+
+    const remainingFields = FORM_FIELDS.filter(
+      field => !enhancementState.appliedFields.has(field) && enhancementState.data!.enhancedLetter[field] !== ''
+    );
+
+    if (remainingFields.length === 0 && (enhancementState.milestonesApplied || !enhancementState.data.suggestedMilestones?.length)) {
+      notificationService.info({
         title: "Nothing to Apply",
-        description: "All enhancements have already been applied.",
+        description: "All enhancements have already been applied."
       });
       return;
     }
 
     // Apply remaining fields
-    for (const field of fieldsToApply) {
+    for (const field of remainingFields) {
       await applyField(field);
     }
-    
-    // Apply milestones if not applied yet
+
+    // Apply milestones if not already applied
     if (!enhancementState.milestonesApplied && enhancementState.data.suggestedMilestones?.length && onApplyMilestones) {
       await applyMilestones();
     }
     
-    toast({
+    notificationService.success({
       title: "✅ All Enhancements Applied",
-      description: "Your letter has been updated with all remaining AI suggestions.",
+      description: "Your letter has been updated with all remaining AI suggestions."
     });
-  }, [enhancementState, applyField, applyMilestones, onApplyMilestones, toast]);
+  }, [enhancementState, applyField, applyMilestones, onApplyMilestones, notificationService]);
 
   const retry = () => enhance();
 
@@ -366,7 +276,7 @@ export const useSmartEnhancement = ({
   };
 
   // Check if we already have enhancement data for current inputs
-  const currentInputHash = generateInputHash(title, goal, content, send_date);
+  const currentInputHash = enhancementService.generateInputHash({ title, goal, content, send_date });
   const hasEnhancementForCurrentInputs = Boolean(getCachedEnhancement(currentInputHash));
 
   return {
