@@ -3,6 +3,7 @@ import type { EnhancementData, EnhancementService, NotificationService } from '.
 import type { CachedItem } from './database';
 import type { ErrorHandler } from '@/utils/errorHandler';
 import type { CacheManager } from '@/utils/cacheManager';
+import type { ToastProps, ToastActionElement } from '@/components/ui/toast';
 
 // Smart enhancement hook types
 export interface UseSmartEnhancementProps {
@@ -34,30 +35,41 @@ export interface UseSmartEnhancementDeps {
   cacheManager?: CacheManager<EnhancementData>;
 }
 
-// Toast hook types
-export type ToasterToast = {
+// Toast hook types (moved from src/hooks/use-toast.ts)
+
+export type ToasterToast = ToastProps & {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
-  action?: React.ReactElement;
-  variant?: "default" | "destructive";
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  action?: ToastActionElement;
 };
 
-export type ActionType = {
-  type: "ADD_TOAST";
-  toast: ToasterToast;
-} | {
-  type: "UPDATE_TOAST";
-  toast: Partial<ToasterToast>;
-} | {
-  type: "DISMISS_TOAST";
-  toastId?: ToasterToast["id"];
-} | {
-  type: "REMOVE_TOAST";
-  toastId?: ToasterToast["id"];
-};
+export type ActionType = typeof actionTypes;
+
+export const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+export type Action =
+  | {
+      type: ActionType["ADD_TOAST"];
+      toast: ToasterToast;
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"];
+      toast: Partial<ToasterToast>;
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"];
+      toastId?: ToasterToast["id"];
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"];
+      toastId?: ToasterToast["id"];
+    };
 
 export interface State {
   toasts: ToasterToast[];
