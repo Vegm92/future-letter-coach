@@ -58,6 +58,7 @@ export type Database = {
       letters: {
         Row: {
           ai_enhanced: boolean | null
+          ai_enhanced_content: string | null
           ai_enhanced_goal: string | null
           content: string
           created_at: string
@@ -74,6 +75,7 @@ export type Database = {
         }
         Insert: {
           ai_enhanced?: boolean | null
+          ai_enhanced_content?: string | null
           ai_enhanced_goal?: string | null
           content: string
           created_at?: string
@@ -90,6 +92,7 @@ export type Database = {
         }
         Update: {
           ai_enhanced?: boolean | null
+          ai_enhanced_content?: string | null
           ai_enhanced_goal?: string | null
           content?: string
           created_at?: string

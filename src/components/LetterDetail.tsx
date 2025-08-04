@@ -18,6 +18,7 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDel
   const [personalComments, setPersonalComments] = useState(letter.personal_comments || "");
   const [isSavingComments, setIsSavingComments] = useState(false);
   const [showOriginalGoal, setShowOriginalGoal] = useState(false);
+  const [showOriginalContent, setShowOriginalContent] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
 
@@ -47,7 +48,17 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDel
   };
 
   const isValidEnhancedGoal = (enhancedGoal?: string) => {
-    return enhancedGoal && enhancedGoal !== "true" && enhancedGoal.trim().length > 0;
+    return enhancedGoal && 
+           enhancedGoal !== "true" && 
+           enhancedGoal.trim().length > 0 && 
+           enhancedGoal !== letter.goal;
+  };
+
+  const isValidEnhancedContent = (enhancedContent?: string) => {
+    return enhancedContent && 
+           enhancedContent !== "true" && 
+           enhancedContent.trim().length > 0 && 
+           enhancedContent !== letter.content;
   };
 
   const handleSaveComments = async () => {
@@ -238,9 +249,43 @@ const LetterDetail = ({ letter, isOpen, onClose, onEdit, onUpdate, onPlay, onDel
 
           {/* Letter Content */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Letter Content</h3>
-            <div className="bg-muted/30 p-4 rounded-md">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{letter.content}</p>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">Letter Content</h3>
+              {isValidEnhancedContent(letter.ai_enhanced_content) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOriginalContent(!showOriginalContent)}
+                  className="text-xs"
+                >
+                  Show {showOriginalContent ? 'Enhanced' : 'Original'}
+                </Button>
+              )}
+            </div>
+            <div>
+              {isValidEnhancedContent(letter.ai_enhanced_content) ? (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">
+                    {showOriginalContent ? 'Original Content:' : 'Enhanced Content:'}
+                  </h4>
+                  <div className={`p-4 rounded-md ${
+                    showOriginalContent 
+                      ? 'bg-muted/30' 
+                      : 'bg-primary/10 border border-primary/20'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {showOriginalContent ? letter.content : letter.ai_enhanced_content}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-1">Content:</h4>
+                  <div className="bg-muted/30 p-4 rounded-md">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{letter.content}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

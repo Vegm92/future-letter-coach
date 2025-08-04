@@ -9,6 +9,7 @@ export interface Letter {
   send_date: string;
   status: 'draft' | 'scheduled' | 'sent' | 'archived';
   ai_enhanced_goal?: string;
+  ai_enhanced_content?: string;
   ai_enhanced?: boolean;
   voice_memo_url?: string;
   is_locked: boolean;
