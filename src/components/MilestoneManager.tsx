@@ -9,7 +9,6 @@ import { Plus, Edit, Trash2, Calendar, Target, X, Lightbulb } from "lucide-react
 import { format, parseISO } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useEnhanceLetterComplete } from "@/hooks/useEnhanceLetterComplete";
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
 
 interface Milestone {
@@ -43,20 +42,9 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [enhancementData, setEnhancementData] = useState<any>(null);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const { toast } = useToast();
-
-  // Use the unified enhancement hook for milestone suggestions
-  const { 
-    data: enhancementData, 
-    isLoading: isLoadingSuggestions,
-    refetch: generateSuggestions
-  } = useEnhanceLetterComplete({
-    title: letter?.title || '',
-    goal: letter?.goal || '',
-    content: letter?.content || '',
-    send_date: letter?.send_date || '',
-    enabled: false // Only trigger manually
-  });
 
   const openCreateForm = () => {
     setEditingMilestone(null);
@@ -197,8 +185,21 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
       return;
     }
 
+    setIsLoadingSuggestions(true);
+
     try {
-      await generateSuggestions();
+      const { data, error } = await supabase.functions.invoke('enhance-letter-complete', {
+        body: { 
+          title: letter.title, 
+          goal: letter.goal, 
+          content: letter.content, 
+          send_date: letter.send_date 
+        }
+      });
+
+      if (error) throw error;
+
+      setEnhancementData(data);
       setShowSuggestions(true);
       toast({
         title: "Milestones suggested!",
@@ -211,6 +212,8 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
         description: "Unable to generate milestone suggestions. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingSuggestions(false);
     }
   };
 

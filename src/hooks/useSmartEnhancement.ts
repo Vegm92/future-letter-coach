@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useEnhanceLetterComplete } from './useEnhanceLetterComplete';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-type EnhancementState = 'idle' | 'loading' | 'success' | 'error';
 type FieldType = 'title' | 'goal' | 'content';
 
 interface EnhancementData {
@@ -28,6 +27,17 @@ interface UseSmartEnhancementProps {
   onApplyMilestones?: (milestones: any[]) => void;
 }
 
+interface EnhancementState {
+  status: 'idle' | 'loading' | 'success' | 'error';
+  data: EnhancementData | null;
+  showSuggestions: boolean;
+  isExpanded: boolean;
+  appliedFields: Set<FieldType>;
+  loadingFields: Set<FieldType>;
+  milestonesApplied: boolean;
+  isApplyingMilestones: boolean;
+}
+
 export const useSmartEnhancement = ({
   title,
   goal,
@@ -36,67 +46,87 @@ export const useSmartEnhancement = ({
   onApplyField,
   onApplyMilestones
 }: UseSmartEnhancementProps) => {
-  const [state, setState] = useState<EnhancementState>('idle');
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [appliedFields, setAppliedFields] = useState<Set<FieldType>>(new Set());
-  const [loadingFields, setLoadingFields] = useState<Set<FieldType>>(new Set());
-  const [milestonesApplied, setMilestonesApplied] = useState(false);
-  const [isApplyingMilestones, setIsApplyingMilestones] = useState(false);
-  const [hasEnhancementData, setHasEnhancementData] = useState(false);
+  const [enhancementState, setEnhancementState] = useState<EnhancementState>({
+    status: 'idle',
+    data: null,
+    showSuggestions: false,
+    isExpanded: false,
+    appliedFields: new Set(),
+    loadingFields: new Set(),
+    milestonesApplied: false,
+    isApplyingMilestones: false,
+  });
+  
   const { toast } = useToast();
 
-  const {
-    data: enhancementData,
-    isLoading,
-    isSuccess,
-    isError,
-    refetch
-  } = useEnhanceLetterComplete({
-    title,
-    goal,
-    content,
-    send_date,
-    enabled: state === 'loading'
-  });
+  const fetchEnhancement = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('enhance-letter-complete', {
+        body: { title, goal, content, send_date }
+      });
 
-  // Update state based on query status
-  if (isLoading && state !== 'loading') {
-    setState('loading');
-  } else if (isSuccess && state !== 'success') {
-    setState('success');
-    setHasEnhancementData(true);
-    setIsExpanded(true);
-    toast({
-      title: "✨ Letter Enhanced!",
-      description: "Your letter has been enhanced with AI. Review the suggestions below.",
-    });
-  } else if (isError && state !== 'error') {
-    setState('error');
-    toast({
-      title: "Enhancement Failed",
-      description: "Unable to enhance your letter. Please try again.",
-      variant: "destructive"
-    });
-  }
+      if (error) throw error;
 
-  const enhance = useCallback(() => {
-    if (state === 'loading') return;
-    setState('loading');
-    setHasEnhancementData(false);
-    setIsExpanded(false);
-  }, [state]);
+      setEnhancementState(prev => ({
+        ...prev,
+        status: 'success',
+        data,
+        showSuggestions: true,
+        isExpanded: true
+      }));
+
+      toast({
+        title: "✨ Letter Enhanced!",
+        description: "Your letter has been enhanced with AI. Review the suggestions below.",
+      });
+    } catch (error) {
+      setEnhancementState(prev => ({
+        ...prev,
+        status: 'error'
+      }));
+
+      toast({
+        title: "Enhancement Failed",
+        description: "Unable to enhance your letter. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [title, goal, content, send_date, toast]);
+
+  const enhance = useCallback(async () => {
+    if (enhancementState.status === 'loading') return;
+    
+    setEnhancementState(prev => ({
+      ...prev,
+      status: 'loading',
+      showSuggestions: false,
+      isExpanded: false,
+      data: null,
+      appliedFields: new Set(),
+      milestonesApplied: false
+    }));
+
+    await fetchEnhancement();
+  }, [enhancementState.status, fetchEnhancement]);
 
   const applyField = useCallback(async (field: FieldType) => {
-    if (!enhancementData?.enhancedLetter) return;
+    if (!enhancementState.data?.enhancedLetter) return;
     
-    setLoadingFields(prev => new Set([...prev, field]));
+    setEnhancementState(prev => ({
+      ...prev,
+      loadingFields: new Set([...prev.loadingFields, field])
+    }));
     
     try {
-      const value = enhancementData.enhancedLetter[field];
+      const value = enhancementState.data.enhancedLetter[field];
       await new Promise(resolve => setTimeout(resolve, 300)); // Brief loading state
       onApplyField(field, value);
       
-      setAppliedFields(prev => new Set([...prev, field]));
+      setEnhancementState(prev => ({
+        ...prev,
+        appliedFields: new Set([...prev.appliedFields, field]),
+        loadingFields: new Set([...prev.loadingFields].filter(f => f !== field))
+      }));
       
       toast({
         title: "✅ Enhancement Applied",
@@ -108,28 +138,35 @@ export const useSmartEnhancement = ({
         description: `Could not apply ${field} enhancement.`,
         variant: "destructive"
       });
-    } finally {
-      setLoadingFields(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(field);
-        return newSet;
-      });
+      
+      setEnhancementState(prev => ({
+        ...prev,
+        loadingFields: new Set([...prev.loadingFields].filter(f => f !== field))
+      }));
     }
-  }, [enhancementData, onApplyField, toast]);
+  }, [enhancementState.data, onApplyField, toast]);
 
   const applyMilestones = useCallback(async () => {
-    if (!enhancementData?.suggestedMilestones?.length || !onApplyMilestones || milestonesApplied) return;
+    if (!enhancementState.data?.suggestedMilestones?.length || !onApplyMilestones || enhancementState.milestonesApplied) return;
     
-    setIsApplyingMilestones(true);
+    setEnhancementState(prev => ({
+      ...prev,
+      isApplyingMilestones: true
+    }));
     
     try {
       await new Promise(resolve => setTimeout(resolve, 500)); // Brief loading state
-      onApplyMilestones(enhancementData.suggestedMilestones);
-      setMilestonesApplied(true);
+      onApplyMilestones(enhancementState.data.suggestedMilestones);
+      
+      setEnhancementState(prev => ({
+        ...prev,
+        milestonesApplied: true,
+        isApplyingMilestones: false
+      }));
       
       toast({
         title: "✅ Milestones Applied",
-        description: `Added ${enhancementData.suggestedMilestones.length} suggested milestones.`,
+        description: `Added ${enhancementState.data.suggestedMilestones.length} suggested milestones.`,
       });
     } catch (error) {
       toast({
@@ -137,18 +174,21 @@ export const useSmartEnhancement = ({
         description: "Could not apply suggested milestones.",
         variant: "destructive"
       });
-    } finally {
-      setIsApplyingMilestones(false);
+      
+      setEnhancementState(prev => ({
+        ...prev,
+        isApplyingMilestones: false
+      }));
     }
-  }, [enhancementData, onApplyMilestones, toast, milestonesApplied]);
+  }, [enhancementState.data, enhancementState.milestonesApplied, onApplyMilestones, toast]);
 
   const applyAllRemaining = useCallback(async () => {
-    if (!enhancementData?.enhancedLetter) return;
+    if (!enhancementState.data?.enhancedLetter) return;
     
     const fieldsToApply: FieldType[] = (['title', 'goal', 'content'] as FieldType[])
-      .filter(field => !appliedFields.has(field) && enhancementData.enhancedLetter[field] !== '');
+      .filter(field => !enhancementState.appliedFields.has(field) && enhancementState.data!.enhancedLetter[field] !== '');
     
-    if (fieldsToApply.length === 0 && (milestonesApplied || !enhancementData.suggestedMilestones?.length)) {
+    if (fieldsToApply.length === 0 && (enhancementState.milestonesApplied || !enhancementState.data.suggestedMilestones?.length)) {
       toast({
         title: "Nothing to Apply",
         description: "All enhancements have already been applied.",
@@ -162,7 +202,7 @@ export const useSmartEnhancement = ({
     }
     
     // Apply milestones if not applied yet
-    if (!milestonesApplied && enhancementData.suggestedMilestones?.length && onApplyMilestones) {
+    if (!enhancementState.milestonesApplied && enhancementState.data.suggestedMilestones?.length && onApplyMilestones) {
       await applyMilestones();
     }
     
@@ -170,28 +210,34 @@ export const useSmartEnhancement = ({
       title: "✅ All Enhancements Applied",
       description: "Your letter has been updated with all remaining AI suggestions.",
     });
-  }, [enhancementData, onApplyField, onApplyMilestones, toast, appliedFields, milestonesApplied, applyField, applyMilestones]);
+  }, [enhancementState, applyField, applyMilestones, onApplyMilestones, toast]);
 
   const retry = useCallback(() => {
-    setState('idle');
     enhance();
   }, [enhance]);
 
+  const setIsExpanded = useCallback((expanded: boolean) => {
+    setEnhancementState(prev => ({
+      ...prev,
+      isExpanded: expanded
+    }));
+  }, []);
+
   return {
-    state,
-    data: enhancementData,
-    isExpanded,
+    state: enhancementState.status,
+    data: enhancementState.data,
+    isExpanded: enhancementState.isExpanded,
     setIsExpanded,
     enhance,
     applyField,
     applyMilestones,
     applyAllRemaining,
     retry,
-    canEnhance: Boolean(goal?.trim()) && state !== 'loading',
-    appliedFields,
-    loadingFields,
-    milestonesApplied,
-    isApplyingMilestones,
-    hasEnhancementData
+    canEnhance: Boolean(goal?.trim()) && enhancementState.status !== 'loading',
+    appliedFields: enhancementState.appliedFields,
+    loadingFields: enhancementState.loadingFields,
+    milestonesApplied: enhancementState.milestonesApplied,
+    isApplyingMilestones: enhancementState.isApplyingMilestones,
+    hasEnhancementData: enhancementState.showSuggestions
   };
 };

@@ -225,7 +225,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
                 )}
                 
                 {/* Enhancement Results */}
-                {enhancement.data && enhancement.hasEnhancementData && (
+                {enhancement.hasEnhancementData && enhancement.data && (
                   <Collapsible open={enhancement.isExpanded} onOpenChange={enhancement.setIsExpanded}>
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="w-full justify-between p-0 hover:bg-transparent">
