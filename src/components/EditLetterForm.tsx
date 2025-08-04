@@ -129,6 +129,92 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
   const canEditSendDate = !letter.is_locked && letter.status !== 'sent';
   const canEnhance = !letter.ai_enhanced && !letter.is_locked;
 
+  // Helper render functions
+  const renderFormFields = () => (
+    <>
+      <FormField
+        id="edit-title"
+        label="Letter Title"
+        value={formData.title}
+        placeholder="Give your letter a meaningful title..."
+        disabled={letter.is_locked}
+        onChange={(value) => updateFormData('title', value)}
+        required
+      />
+
+      <FormField
+        id="edit-goal"
+        label="Your Goal"
+        type="textarea"
+        value={formData.goal}
+        placeholder="What do you want to achieve?"
+        disabled={letter.is_locked}
+        onChange={(value) => updateFormData('goal', value)}
+        required
+        rows={3}
+      />
+
+      <FormField
+        id="edit-content"
+        label="Letter Content"
+        type="textarea"
+        value={formData.content}
+        placeholder="Write your letter to your future self..."
+        disabled={letter.is_locked}
+        onChange={(value) => updateFormData('content', value)}
+        required
+        rows={5}
+      />
+
+      <FormField
+        id="edit-send-date"
+        label="Send Date"
+        type="date"
+        value={formData.sendDate}
+        disabled={!canEditSendDate}
+        onChange={(value) => updateFormData('sendDate', value)}
+        required
+        min={format(new Date(), 'yyyy-MM-dd')}
+        helpText={!canEditSendDate ? "Send date cannot be changed (letter is locked or already sent)" : undefined}
+      />
+    </>
+  );
+
+  const renderEnhancementSection = () => (
+    <>
+      <EnhancementSection enhancement={enhancement} canEnhance={canEnhance} />
+      {letter.ai_enhanced && <AlreadyEnhancedNotice />}
+    </>
+  );
+
+  const renderFormActions = () => (
+    <>
+      <div className="flex justify-end space-x-3 pt-4 border-t">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={isSubmitting || letter.is_locked}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? "Updating..." : "Update Letter"}
+        </Button>
+      </div>
+
+      {letter.is_locked && (
+        <div className="text-xs text-muted-foreground text-center pt-2">
+          This letter is locked and cannot be edited (within 48 hours of send date)
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -147,55 +233,9 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <FormField
-              id="edit-title"
-              label="Letter Title"
-              value={formData.title}
-              placeholder="Give your letter a meaningful title..."
-              disabled={letter.is_locked}
-              onChange={(value) => updateFormData('title', value)}
-              required
-            />
-
-            <FormField
-              id="edit-goal"
-              label="Your Goal"
-              type="textarea"
-              value={formData.goal}
-              placeholder="What do you want to achieve?"
-              disabled={letter.is_locked}
-              onChange={(value) => updateFormData('goal', value)}
-              required
-              rows={3}
-            />
-
-            <FormField
-              id="edit-content"
-              label="Letter Content"
-              type="textarea"
-              value={formData.content}
-              placeholder="Write your letter to your future self..."
-              disabled={letter.is_locked}
-              onChange={(value) => updateFormData('content', value)}
-              required
-              rows={5}
-            />
-
-            <EnhancementSection enhancement={enhancement} canEnhance={canEnhance} />
-
-            {letter.ai_enhanced && <AlreadyEnhancedNotice />}
-
-            <FormField
-              id="edit-send-date"
-              label="Send Date"
-              type="date"
-              value={formData.sendDate}
-              disabled={!canEditSendDate}
-              onChange={(value) => updateFormData('sendDate', value)}
-              required
-              min={format(new Date(), 'yyyy-MM-dd')}
-              helpText={!canEditSendDate ? "Send date cannot be changed (letter is locked or already sent)" : undefined}
-            />
+            {renderFormFields()}
+            
+            {renderEnhancementSection()}
 
             <VoiceMemoSection
               isRecording={isRecording}
@@ -204,30 +244,7 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
               onToggleRecording={toggleRecording}
             />
 
-            {/* Form Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || letter.is_locked}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? "Updating..." : "Update Letter"}
-              </Button>
-            </div>
-
-            {letter.is_locked && (
-              <div className="text-xs text-muted-foreground text-center pt-2">
-                This letter is locked and cannot be edited (within 48 hours of send date)
-              </div>
-            )}
+            {renderFormActions()}
           </form>
         </CardContent>
       </Card>
