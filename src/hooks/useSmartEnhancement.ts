@@ -74,7 +74,9 @@ export const useSmartEnhancement = ({
   // Generate a hash from form inputs to use as cache key
   const generateInputHash = useCallback((title: string, goal: string, content: string, send_date: string) => {
     const inputString = `${title.trim()}|${goal.trim()}|${content.trim()}|${send_date}`;
-    return btoa(inputString).replace(/[^a-zA-Z0-9]/g, ''); // Simple base64 hash, cleaned
+    // Handle Unicode characters by encoding to UTF-8 first
+    const encodedString = encodeURIComponent(inputString);
+    return btoa(encodedString).replace(/[^a-zA-Z0-9]/g, ''); // Simple base64 hash, cleaned
   }, []);
 
   // Check if we have cached data for current inputs
