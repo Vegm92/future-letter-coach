@@ -42,6 +42,7 @@ export const useSmartEnhancement = ({
   const [loadingFields, setLoadingFields] = useState<Set<FieldType>>(new Set());
   const [milestonesApplied, setMilestonesApplied] = useState(false);
   const [isApplyingMilestones, setIsApplyingMilestones] = useState(false);
+  const [hasEnhancementData, setHasEnhancementData] = useState(false);
   const { toast } = useToast();
 
   const {
@@ -63,6 +64,7 @@ export const useSmartEnhancement = ({
     setState('loading');
   } else if (isSuccess && state !== 'success') {
     setState('success');
+    setHasEnhancementData(true);
     setIsExpanded(true);
     toast({
       title: "✨ Letter Enhanced!",
@@ -80,6 +82,7 @@ export const useSmartEnhancement = ({
   const enhance = useCallback(() => {
     if (state === 'loading') return;
     setState('loading');
+    setHasEnhancementData(false);
     setIsExpanded(false);
   }, [state]);
 
@@ -188,6 +191,7 @@ export const useSmartEnhancement = ({
     appliedFields,
     loadingFields,
     milestonesApplied,
-    isApplyingMilestones
+    isApplyingMilestones,
+    hasEnhancementData
   };
 };
