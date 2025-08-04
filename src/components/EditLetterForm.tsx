@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,39 +14,58 @@ import { useSmartEnhancement } from "@/hooks/useSmartEnhancement";
 
 import type { Letter, EditLetterFormProps } from '@/types';
 
+interface FormData {
+  title: string;
+  content: string;
+  goal: string;
+  sendDate: string;
+}
+
 const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => {
-  const [title, setTitle] = useState(letter.title);
-  const [content, setContent] = useState(letter.content);
-  const [goal, setGoal] = useState(letter.goal);
-  const [sendDate, setSendDate] = useState(format(parseISO(letter.send_date), 'yyyy-MM-dd'));
+  // Grouped form data state
+  const [formData, setFormData] = useState<FormData>({
+    title: letter.title,
+    content: letter.content,
+    goal: letter.goal,
+    sendDate: format(parseISO(letter.send_date), 'yyyy-MM-dd')
+  });
+  
+  // Separate UI states
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Sync form data when letter prop changes
+  useEffect(() => {
+    if (!isSubmitting) { // Prevent sync during form submission
+      setFormData({
+        title: letter.title,
+        content: letter.content,
+        goal: letter.goal,
+        sendDate: format(parseISO(letter.send_date), 'yyyy-MM-dd')
+      });
+    }
+  }, [letter, isSubmitting]);
+
+  // Helper function to update form data
+  const updateFormData = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const enhancement = useSmartEnhancement({
-    title,
-    goal,
-    content,
-    send_date: sendDate,
+    title: formData.title,
+    goal: formData.goal,
+    content: formData.content,
+    send_date: formData.sendDate,
     onApplyField: (field, value) => {
-      switch (field) {
-        case 'title':
-          setTitle(value);
-          break;
-        case 'goal':
-          setGoal(value);
-          break;
-        case 'content':
-          setContent(value);
-          break;
-      }
+      updateFormData(field as keyof FormData, value);
     }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title.trim() || !content.trim() || !goal.trim() || !sendDate) {
+    if (!formData.title.trim() || !formData.content.trim() || !formData.goal.trim() || !formData.sendDate) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
@@ -58,13 +77,13 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     setIsSubmitting(true);
     try {
       const updateData = {
-        title: title.trim(),
-        content: content.trim(),
-        goal: goal.trim(),
-        send_date: sendDate,
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        goal: formData.goal.trim(),
+        send_date: formData.sendDate,
         ai_enhanced: letter.ai_enhanced || enhancement.state === 'success',
-        ...(enhancement.state === 'success' && enhancement.appliedFields.has('goal') && { ai_enhanced_goal: goal }),
-        ...(enhancement.state === 'success' && enhancement.appliedFields.has('content') && { ai_enhanced_content: content }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('goal') && { ai_enhanced_goal: formData.goal }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('content') && { ai_enhanced_content: formData.content }),
       };
 
       const { data, error } = await supabase
@@ -128,8 +147,8 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
               <Input
                 id="edit-title"
                 placeholder="Give your letter a meaningful title..."
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={formData.title}
+                onChange={(e) => updateFormData('title', e.target.value)}
                 disabled={letter.is_locked}
                 className="mt-1"
               />
@@ -141,8 +160,8 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
               <Textarea
                 id="edit-goal"
                 placeholder="What do you want to achieve?"
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
+                value={formData.goal}
+                onChange={(e) => updateFormData('goal', e.target.value)}
                 disabled={letter.is_locked}
                 className="resize-none h-20 mt-1"
               />
@@ -154,8 +173,8 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
               <Textarea
                 id="edit-content"
                 placeholder="Write your letter to your future self..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
+                value={formData.content}
+                onChange={(e) => updateFormData('content', e.target.value)}
                 disabled={letter.is_locked}
                 className="resize-none h-32 mt-1"
               />
@@ -399,8 +418,8 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
                 <Input
                   id="edit-send-date"
                   type="date"
-                  value={sendDate}
-                  onChange={(e) => setSendDate(e.target.value)}
+                  value={formData.sendDate}
+                  onChange={(e) => updateFormData('sendDate', e.target.value)}
                   disabled={!canEditSendDate}
                   min={format(new Date(), 'yyyy-MM-dd')}
                   className="pl-10"
