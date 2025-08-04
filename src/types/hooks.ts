@@ -1,6 +1,5 @@
 import type { FieldType } from '@/lib/constants';
 import type { EnhancementData, EnhancementService, NotificationService } from './services';
-import type { CachedItem } from './database';
 import type { ErrorHandler } from '@/utils/errorHandler';
 import type { CacheManager } from '@/utils/cacheManager';
 import type { ToastProps, ToastActionElement } from '@/components/ui/toast';

@@ -29,10 +29,3 @@ export interface Milestone {
 // Form-specific variations
 export type CreateMilestone = Omit<Milestone, 'id' | 'completed'>;
 export type SuggestedMilestone = Omit<Milestone, 'id' | 'completed'>;
-
-// Cached item wrapper
-export interface CachedItem<T> {
-  data: T;
-  timestamp: number;
-  expirationHours: number;
-}

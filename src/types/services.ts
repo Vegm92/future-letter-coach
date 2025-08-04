@@ -42,3 +42,28 @@ export interface ErrorContext {
   operation: string;
   [key: string]: any;
 }
+
+export interface CachedItem<T> {
+  data: T;
+  timestamp: number;
+  expirationMs: number;
+  accessCount: number;
+  lastAccessed: number;
+}
+
+export interface CacheOptions {
+  expirationMs?: number;
+  expirationSeconds?: number;
+  expirationMinutes?: number;
+  expirationHours?: number;
+}
+
+export interface CacheStats {
+  total: number;
+  valid: number;
+  expired: number;
+  averageAge: number;
+  oldestItem: number;
+  newestItem: number;
+  memoryUsage: number;
+}
