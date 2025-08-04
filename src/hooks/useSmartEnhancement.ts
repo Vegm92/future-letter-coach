@@ -84,7 +84,7 @@ export const useSmartEnhancement = ({
   }, [state]);
 
   const applyField = useCallback(async (field: FieldType) => {
-    if (!enhancementData?.enhancedLetter || appliedFields.has(field)) return;
+    if (!enhancementData?.enhancedLetter) return;
     
     setLoadingFields(prev => new Set([...prev, field]));
     
@@ -112,7 +112,7 @@ export const useSmartEnhancement = ({
         return newSet;
       });
     }
-  }, [enhancementData, onApplyField, toast, appliedFields]);
+  }, [enhancementData, onApplyField, toast]);
 
   const applyMilestones = useCallback(async () => {
     if (!enhancementData?.suggestedMilestones?.length || !onApplyMilestones || milestonesApplied) return;
@@ -143,7 +143,7 @@ export const useSmartEnhancement = ({
     if (!enhancementData?.enhancedLetter) return;
     
     const fieldsToApply: FieldType[] = (['title', 'goal', 'content'] as FieldType[])
-      .filter(field => !appliedFields.has(field));
+      .filter(field => !appliedFields.has(field) && enhancementData.enhancedLetter[field] !== '');
     
     if (fieldsToApply.length === 0 && (milestonesApplied || !enhancementData.suggestedMilestones?.length)) {
       toast({

@@ -27,10 +27,17 @@ interface UseEnhanceLetterCompleteParams {
   enabled?: boolean;
 }
 
-// Create a hash from the input parameters for cache key
+// Create a hash from the input parameters for cache key (Unicode-safe)
 const createCacheKey = (params: UseEnhanceLetterCompleteParams) => {
   const inputString = `${params.title}-${params.goal}-${params.content}-${params.send_date}`;
-  return btoa(inputString).slice(0, 16); // Simple hash for cache key
+  // Use simple hash function that works with Unicode characters
+  let hash = 0;
+  for (let i = 0; i < inputString.length; i++) {
+    const char = inputString.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash).toString(36).slice(0, 16);
 };
 
 export const useEnhanceLetterComplete = (params: UseEnhanceLetterCompleteParams) => {
