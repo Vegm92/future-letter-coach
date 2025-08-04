@@ -4,6 +4,14 @@ export class CacheManager<T> {
   private cache = new Map<string, CachedItem<T>>();
   
   set(key: string, data: T, expirationHours: number = 1): void {
+    // Input validation
+    if (expirationHours <= 0) {
+      throw new Error('Expiration hours must be positive');
+    }
+    if (typeof key !== 'string' || key.trim() === '') {
+      throw new Error('Key must be a non-empty string');
+    }
+    
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -29,7 +37,11 @@ export class CacheManager<T> {
   }
   
   has(key: string): boolean {
-    return this.get(key) !== null;
+    const item = this.cache.get(key);
+    if (!item) return false;
+    
+    const isExpired = Date.now() - item.timestamp > item.expirationHours * 60 * 60 * 1000;
+    return !isExpired; // Pure check - no side effects
   }
   
   clear(): void {
@@ -38,6 +50,22 @@ export class CacheManager<T> {
   
   delete(key: string): boolean {
     return this.cache.delete(key);
+  }
+  
+  // Manual cleanup of expired items to prevent memory leaks
+  purgeExpired(): number {
+    const now = Date.now();
+    let purgedCount = 0;
+    
+    for (const [key, item] of this.cache.entries()) {
+      const isExpired = now - item.timestamp > item.expirationHours * 60 * 60 * 1000;
+      if (isExpired) {
+        this.cache.delete(key);
+        purgedCount++;
+      }
+    }
+    
+    return purgedCount;
   }
   
   // Get all non-expired keys
