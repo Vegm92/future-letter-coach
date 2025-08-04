@@ -297,6 +297,10 @@ export const useSmartEnhancement = ({
     }));
   }, []);
 
+  // Check if we already have enhancement data for current inputs
+  const currentInputHash = generateInputHash(title, goal, content, send_date);
+  const hasEnhancementForCurrentInputs = Boolean(getCachedEnhancement(currentInputHash));
+
   return {
     state: enhancementState.status,
     data: enhancementState.data,
@@ -307,7 +311,9 @@ export const useSmartEnhancement = ({
     applyMilestones,
     applyAllRemaining,
     retry,
-    canEnhance: Boolean(goal?.trim()) && enhancementState.status !== 'loading',
+    canEnhance: Boolean(goal?.trim()) && 
+                enhancementState.status !== 'loading' && 
+                !hasEnhancementForCurrentInputs,
     appliedFields: enhancementState.appliedFields,
     loadingFields: enhancementState.loadingFields,
     milestonesApplied: enhancementState.milestonesApplied,
