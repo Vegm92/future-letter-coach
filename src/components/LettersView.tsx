@@ -13,7 +13,7 @@ import LetterDetail from "./LetterDetail";
 import EditLetterForm from "./EditLetterForm";
 import { LettersViewProps } from "@/types";
 
-const LettersView = ({ onCreateClick, refreshTrigger }: LettersViewProps) => {
+const LettersView = ({ onCreateClick, refreshTrigger, autoViewLetter }: LettersViewProps) => {
   const [letters, setLetters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
@@ -24,6 +24,13 @@ const LettersView = ({ onCreateClick, refreshTrigger }: LettersViewProps) => {
   useEffect(() => {
     fetchLetters();
   }, [refreshTrigger]);
+
+  // Auto-open letter when coming from Dashboard
+  useEffect(() => {
+    if (autoViewLetter) {
+      handleViewLetter(autoViewLetter);
+    }
+  }, [autoViewLetter]);
 
   const fetchLetters = async () => {
     try {

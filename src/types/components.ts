@@ -65,6 +65,7 @@ export interface HeroSectionProps {
 export interface LettersViewProps {
   onCreateClick: () => void;
   refreshTrigger?: number;
+  autoViewLetter?: Letter | null;
 }
 
 export interface VisionVaultProps {

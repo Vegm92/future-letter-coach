@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +38,20 @@ const DashboardWrapper = () => {
 };
 
 const LettersWrapper = () => {
+  const [autoViewLetter, setAutoViewLetter] = useState<any | null>(null);
+
+  useEffect(() => {
+    const handleViewLetter = (event: CustomEvent) => {
+      setAutoViewLetter(event.detail);
+    };
+
+    window.addEventListener('viewLetter', handleViewLetter as EventListener);
+
+    return () => {
+      window.removeEventListener('viewLetter', handleViewLetter as EventListener);
+    };
+  }, []);
+
   return (
     <LettersView 
       onCreateClick={() => {
@@ -44,6 +59,7 @@ const LettersWrapper = () => {
         const event = new CustomEvent('openCreateForm');
         window.dispatchEvent(event);
       }} 
+      autoViewLetter={autoViewLetter}
     />
   );
 };
