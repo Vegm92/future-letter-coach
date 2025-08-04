@@ -5,6 +5,8 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Sparkles } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { AI_TONES, DEFAULT_SETTINGS } from "@/lib/settings/constants";
+import { mergeAIPreferences } from "@/lib/settings/utils";
 
 const AIPreferences = () => {
   const { profile, saving, updateProfile } = useProfile();
@@ -16,11 +18,8 @@ const AIPreferences = () => {
     };
   }>({});
 
-  const currentPrefs = localChanges.ai_preferences ?? profile?.ai_preferences ?? {
-    enabled: true,
-    tone: 'motivational' as const,
-    auto_apply: false,
-  };
+  const currentPrefs = localChanges.ai_preferences ?? 
+    mergeAIPreferences(profile?.ai_preferences as any);
 
   const handleSave = async () => {
     if (localChanges.ai_preferences) {
@@ -75,42 +74,17 @@ const AIPreferences = () => {
           disabled={!currentPrefs.enabled}
           className="grid grid-cols-2 gap-4"
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="casual" id="casual" />
-            <Label htmlFor="casual" className="cursor-pointer">
-              <div>
-                <div className="font-medium">Casual</div>
-                <div className="text-sm text-muted-foreground">Friendly and relaxed</div>
-              </div>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="motivational" id="motivational" />
-            <Label htmlFor="motivational" className="cursor-pointer">
-              <div>
-                <div className="font-medium">Motivational</div>
-                <div className="text-sm text-muted-foreground">Inspiring and uplifting</div>
-              </div>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="professional" id="professional" />
-            <Label htmlFor="professional" className="cursor-pointer">
-              <div>
-                <div className="font-medium">Professional</div>
-                <div className="text-sm text-muted-foreground">Clear and focused</div>
-              </div>
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="formal" id="formal" />
-            <Label htmlFor="formal" className="cursor-pointer">
-              <div>
-                <div className="font-medium">Formal</div>
-                <div className="text-sm text-muted-foreground">Structured and formal</div>
-              </div>
-            </Label>
-          </div>
+          {AI_TONES.map((tone) => (
+            <div key={tone.value} className="flex items-center space-x-2">
+              <RadioGroupItem value={tone.value} id={tone.value} />
+              <Label htmlFor={tone.value} className="cursor-pointer">
+                <div>
+                  <div className="font-medium">{tone.label}</div>
+                  <div className="text-sm text-muted-foreground">{tone.description}</div>
+                </div>
+              </Label>
+            </div>
+          ))}
         </RadioGroup>
       </div>
 

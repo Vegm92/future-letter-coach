@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Loader2 } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { TIMEZONES } from "@/lib/settings/constants";
+import { getInitials, createLocalChangeTracker } from "@/lib/settings/utils";
 
 const ProfileSettings = () => {
   const { profile, saving, updateProfile } = useProfile();
@@ -14,27 +16,17 @@ const ProfileSettings = () => {
     timezone?: string;
   }>({});
 
-  const timezones = [
-    { value: "UTC", label: "UTC" },
-    { value: "America/New_York", label: "Eastern Time (ET)" },
-    { value: "America/Chicago", label: "Central Time (CT)" },
-    { value: "America/Denver", label: "Mountain Time (MT)" },
-    { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
-    { value: "Europe/London", label: "British Time (GMT)" },
-    { value: "Europe/Paris", label: "Central European Time (CET)" },
-    { value: "Asia/Tokyo", label: "Japan Standard Time (JST)" },
-    { value: "Australia/Sydney", label: "Australian Eastern Time (AET)" },
-  ];
+  const tracker = createLocalChangeTracker<typeof localChanges>();
 
   const handleSave = async () => {
-    if (Object.keys(localChanges).length > 0) {
+    if (tracker.hasChanges(localChanges as any)) {
       await updateProfile(localChanges);
       setLocalChanges({});
     }
   };
 
   const getDisplayValue = (field: keyof typeof localChanges) => {
-    return localChanges[field] ?? profile?.[field] ?? '';
+    return tracker.getDisplayValue(field, localChanges, profile, '');
   };
 
   if (!profile) {
@@ -52,7 +44,7 @@ const ProfileSettings = () => {
         <Avatar className="h-20 w-20">
           <AvatarImage src={profile.avatar_url} />
           <AvatarFallback className="text-lg">
-            {profile.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+            {getInitials(profile.full_name)}
           </AvatarFallback>
         </Avatar>
         <div>
@@ -102,7 +94,7 @@ const ProfileSettings = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {timezones.map((tz) => (
+              {TIMEZONES.map((tz) => (
                 <SelectItem key={tz.value} value={tz.value}>
                   {tz.label}
                 </SelectItem>
@@ -116,7 +108,7 @@ const ProfileSettings = () => {
       <div className="flex justify-end">
         <Button 
           onClick={handleSave} 
-          disabled={saving || Object.keys(localChanges).length === 0}
+          disabled={saving || !tracker.hasChanges(localChanges as any)}
           className="flex items-center gap-2"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}

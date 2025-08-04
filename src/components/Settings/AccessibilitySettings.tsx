@@ -6,6 +6,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Globe, Type, Contrast } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { LANGUAGES, TEXT_SIZES, DEFAULT_SETTINGS } from "@/lib/settings/constants";
+import { mergeAccessibilityPreferences } from "@/lib/settings/utils";
 
 const AccessibilitySettings = () => {
   const { profile, saving, updateProfile } = useProfile();
@@ -17,21 +19,10 @@ const AccessibilitySettings = () => {
     };
   }>({});
 
-  const currentAccessibility = localChanges.accessibility_preferences ?? profile?.accessibility_preferences ?? {
-    high_contrast: false,
-    text_size: 'normal' as const,
-  };
+  const currentAccessibility = localChanges.accessibility_preferences ?? 
+    mergeAccessibilityPreferences(profile?.accessibility_preferences as any);
 
   const currentLanguage = localChanges.language ?? profile?.language ?? 'en';
-
-  const languages = [
-    { value: 'en', label: 'English' },
-    { value: 'es', label: 'Español (Coming Soon)', disabled: true },
-    { value: 'fr', label: 'Français (Coming Soon)', disabled: true },
-    { value: 'de', label: 'Deutsch (Coming Soon)', disabled: true },
-    { value: 'pt', label: 'Português (Coming Soon)', disabled: true },
-    { value: 'ja', label: '日本語 (Coming Soon)', disabled: true },
-  ];
 
   const handleSave = async () => {
     const changes: any = {};
@@ -78,11 +69,11 @@ const AccessibilitySettings = () => {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {languages.map((lang) => (
+            {LANGUAGES.map((lang) => (
               <SelectItem 
                 key={lang.value} 
                 value={lang.value}
-                disabled={lang.disabled}
+                disabled={'disabled' in lang ? lang.disabled : false}
               >
                 {lang.label}
               </SelectItem>
@@ -128,18 +119,14 @@ const AccessibilitySettings = () => {
             }
             className="flex space-x-6"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="small" id="small" />
-              <Label htmlFor="small" className="cursor-pointer text-sm">Small</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="normal" id="normal" />
-              <Label htmlFor="normal" className="cursor-pointer">Normal</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="large" id="large" />
-              <Label htmlFor="large" className="cursor-pointer text-lg">Large</Label>
-            </div>
+            {TEXT_SIZES.map((size) => (
+              <div key={size.value} className="flex items-center space-x-2">
+                <RadioGroupItem value={size.value} id={size.value} />
+                <Label htmlFor={size.value} className={`cursor-pointer ${size.className}`}>
+                  {size.label}
+                </Label>
+              </div>
+            ))}
           </RadioGroup>
         </div>
       </div>
