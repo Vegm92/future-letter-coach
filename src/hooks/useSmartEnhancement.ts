@@ -137,7 +137,14 @@ export const useSmartEnhancement = (
   const applyField = useCallback(async (field: FieldType) => {
     if (!enhancementState.data?.enhancedLetter) return;
 
-    const value = enhancementState.data.enhancedLetter[field];
+    let value: string;
+    if (field === 'content') {
+      value = enhancementState.data.enhancedLetter.content;
+    } else if (field === 'goal') {
+      value = enhancementState.data.enhancedLetter.goal;
+    } else {
+      value = enhancementState.data.enhancedLetter[field as keyof typeof enhancementState.data.enhancedLetter];
+    }
     
     setEnhancementState(prev => ({
       ...prev,

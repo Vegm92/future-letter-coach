@@ -63,7 +63,8 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
         goal: goal.trim(),
         send_date: sendDate,
         ai_enhanced: letter.ai_enhanced || enhancement.state === 'success',
-        ...(enhancement.state === 'success' && { ai_enhanced_goal: goal }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('goal') && { ai_enhanced_goal: goal }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('content') && { ai_enhanced_content: content }),
       };
 
       const { data, error } = await supabase

@@ -92,7 +92,8 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
         send_date: formData.send_date,
         status: 'scheduled',
         ai_enhanced: enhancement.state === 'success',
-        ai_enhanced_goal: enhancement.state === 'success' ? formData.goal : null,
+        ai_enhanced_goal: enhancement.state === 'success' && enhancement.appliedFields.has('goal') ? formData.goal : null,
+        ai_enhanced_content: enhancement.state === 'success' && enhancement.appliedFields.has('content') ? formData.content : null,
         voice_memo_url: isRecording ? 'placeholder-url' : null,
       }).select().single();
 
