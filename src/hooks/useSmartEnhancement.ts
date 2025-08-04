@@ -126,15 +126,54 @@ export const useSmartEnhancement = ({
         title: "✨ Letter Enhanced!",
         description: "Your letter has been enhanced with AI. Review the suggestions below.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Detailed error logging with context
+      console.error('[SmartEnhancement] Enhancement fetch failed:', {
+        operation: 'fetchEnhancement',
+        timestamp: new Date().toISOString(),
+        inputHash,
+        formData: { 
+          titleLength: title.length, 
+          goalLength: goal.length, 
+          contentLength: content.length,
+          sendDate: send_date 
+        },
+        error: {
+          name: error?.name || 'Unknown',
+          message: error?.message || 'No error message',
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          stack: error?.stack
+        }
+      });
+
       setEnhancementState(prev => ({
         ...prev,
         status: 'error'
       }));
 
+      // Determine error type and provide specific feedback
+      let errorTitle = "Enhancement Failed";
+      let errorDescription = "Unable to enhance your letter. Please try again.";
+      
+      if (error?.message?.includes('network') || error?.message?.includes('fetch')) {
+        errorTitle = "Network Error";
+        errorDescription = "Please check your internet connection and try again.";
+      } else if (error?.code === 'FUNCTION_INVOCATION_FAILED') {
+        errorTitle = "Service Temporarily Unavailable";
+        errorDescription = "The enhancement service is currently unavailable. Please try again in a few moments.";
+      } else if (error?.message?.includes('rate limit') || error?.code === 429) {
+        errorTitle = "Rate Limit Exceeded";
+        errorDescription = "Too many enhancement requests. Please wait a moment before trying again.";
+      } else if (error?.message?.includes('authentication') || error?.code === 401) {
+        errorTitle = "Authentication Error";
+        errorDescription = "Please refresh the page and try again.";
+      }
+
       toast({
-        title: "Enhancement Failed",
-        description: "Unable to enhance your letter. Please try again.",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive"
       });
     }
@@ -208,10 +247,23 @@ export const useSmartEnhancement = ({
         title: "✅ Enhancement Applied",
         description: `Updated ${field} with AI suggestion.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Detailed error logging for field application
+      console.error('[SmartEnhancement] Field application failed:', {
+        operation: 'applyField',
+        timestamp: new Date().toISOString(),
+        field,
+        value: enhancementState.data?.enhancedLetter[field]?.substring(0, 100) + '...',
+        error: {
+          name: error?.name || 'Unknown',
+          message: error?.message || 'No error message',
+          stack: error?.stack
+        }
+      });
+
       toast({
-        title: "Failed to Apply",
-        description: `Could not apply ${field} enhancement.`,
+        title: "Failed to Apply Enhancement",
+        description: `Could not apply ${field} enhancement. The form may be locked or there was a validation error.`,
         variant: "destructive"
       });
       
@@ -244,10 +296,26 @@ export const useSmartEnhancement = ({
         title: "✅ Milestones Applied",
         description: `Added ${enhancementState.data.suggestedMilestones.length} suggested milestones.`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Detailed error logging for milestone application
+      console.error('[SmartEnhancement] Milestone application failed:', {
+        operation: 'applyMilestones',
+        timestamp: new Date().toISOString(),
+        milestoneCount: enhancementState.data?.suggestedMilestones?.length || 0,
+        milestones: enhancementState.data?.suggestedMilestones?.map(m => ({ 
+          title: m.title, 
+          percentage: m.percentage 
+        })),
+        error: {
+          name: error?.name || 'Unknown',
+          message: error?.message || 'No error message',
+          stack: error?.stack
+        }
+      });
+
       toast({
         title: "Failed to Apply Milestones",
-        description: "Could not apply suggested milestones.",
+        description: "Could not apply suggested milestones. There may be a validation error or the form is locked.",
         variant: "destructive"
       });
       
