@@ -1,0 +1,1 @@
+export { useSmartEnhancement } from './useSmartEnhancement';
