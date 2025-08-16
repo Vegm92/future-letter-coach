@@ -186,7 +186,6 @@ function App() {
 ### Install Testing Dependencies
 ```bash
 npm install -D vitest @testing-library/react @testing-library/jest-dom
-npm install -D playwright @playwright/test
 npm install -D @storybook/react vite-bundle-analyzer
 ```
 
@@ -194,7 +193,6 @@ npm install -D @storybook/react vite-bundle-analyzer
 ```bash
 npm run test              # Unit tests
 npm run test:coverage     # Coverage report
-npm run test:e2e          # E2E tests
 npm run lighthouse        # Performance tests
 ```
 
@@ -209,9 +207,6 @@ npm run lighthouse        # Performance tests
 
 ### Screenshot & Video Creation
 ```bash
-# Capture screenshots with Playwright
-npm run test:e2e -- --headed
-
 # Create animated GIFs with tools like:
 # - LiceCap (free)
 # - CloudApp (paid)
