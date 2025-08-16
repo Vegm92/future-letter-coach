@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Mail, Target, Sparkles, Clock, Users } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
-import { HeroSectionProps } from "@/types";
+import { HeroSectionProps } from "@/shared/types";
 
 const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   return (

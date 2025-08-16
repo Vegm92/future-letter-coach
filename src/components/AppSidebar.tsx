@@ -25,8 +25,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/shared/config/client";
+import { useToast } from "@/shared/hooks/use-toast";
 import { AppSidebarProps } from "@/types";
 
 const navigationItems = [

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/shared/config/client";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
 import HeroSection from "@/components/HeroSection";
-import AuthForm from "@/components/AuthForm";
+import { AuthForm } from "@/features/auth";
 import { AppSidebar } from "@/components/AppSidebar";
-import Dashboard from "@/components/Dashboard";
-import CreateLetterForm from "@/components/CreateLetterForm";
+import { Dashboard } from "@/features/dashboard";
+import { CreateLetterForm } from "@/features/letters";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { User, PenTool, LogOut } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/shared/config/client";
+import { useToast } from "@/shared/hooks/use-toast";
 import { HeaderProps } from "@/types";
 
 const Header = ({ user, onCreateClick }: HeaderProps) => {

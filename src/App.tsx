@@ -4,32 +4,33 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import AuthenticatedLayout from "@/components/AuthenticatedLayout";
-import Dashboard from "@/components/Dashboard";
-import LettersView from "@/components/LettersView";
+import { AuthenticatedLayout } from "@/features/auth";
+import { Dashboard } from "@/features/dashboard";
+import { LettersView } from "@/features/letters";
 import Settings from "./pages/Settings";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import type { Letter } from "@/shared/types";
 
 const queryClient = new QueryClient();
 
 // Create wrapper components to access hooks
 const DashboardWrapper = () => {
   const navigate = useNavigate();
-  
+
   return (
-    <Dashboard 
+    <Dashboard
       onCreateClick={() => {
         // This will be handled by AuthenticatedLayout's context
-        const event = new CustomEvent('openCreateForm');
+        const event = new CustomEvent("openCreateForm");
         window.dispatchEvent(event);
-      }} 
-      onViewAllLetters={() => navigate('/letters')} 
-      onViewLetter={(letter) => {
+      }}
+      onViewAllLetters={() => navigate("/letters")}
+      onViewLetter={(letter: Letter) => {
         // Navigate to letters page and trigger letter view
-        navigate('/letters');
+        navigate("/letters");
         setTimeout(() => {
-          const event = new CustomEvent('viewLetter', { detail: letter });
+          const event = new CustomEvent("viewLetter", { detail: letter });
           window.dispatchEvent(event);
         }, 100);
       }}
@@ -38,27 +39,30 @@ const DashboardWrapper = () => {
 };
 
 const LettersWrapper = () => {
-  const [autoViewLetter, setAutoViewLetter] = useState<any | null>(null);
+  const [autoViewLetter, setAutoViewLetter] = useState<Letter | null>(null);
 
   useEffect(() => {
-    const handleViewLetter = (event: CustomEvent) => {
+    const handleViewLetter = (event: CustomEvent<Letter>) => {
       setAutoViewLetter(event.detail);
     };
 
-    window.addEventListener('viewLetter', handleViewLetter as EventListener);
+    window.addEventListener("viewLetter", handleViewLetter as EventListener);
 
     return () => {
-      window.removeEventListener('viewLetter', handleViewLetter as EventListener);
+      window.removeEventListener(
+        "viewLetter",
+        handleViewLetter as EventListener
+      );
     };
   }, []);
 
   return (
-    <LettersView 
+    <LettersView
       onCreateClick={() => {
         // This will be handled by AuthenticatedLayout's context
-        const event = new CustomEvent('openCreateForm');
+        const event = new CustomEvent("openCreateForm");
         window.dispatchEvent(event);
-      }} 
+      }}
       autoViewLetter={autoViewLetter}
     />
   );

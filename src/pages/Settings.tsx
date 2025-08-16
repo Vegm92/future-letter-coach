@@ -1,4 +1,4 @@
-import SettingsLayout from "@/components/Settings/SettingsLayout";
+import { SettingsLayout } from "@/features/settings";
 
 const Settings = () => {
   return <SettingsLayout />;

@@ -1,10 +1,8 @@
 import { useState } from "react";
-import LettersView from "@/components/LettersView";
-import CreateLetterForm from "@/components/CreateLetterForm";
-import SuggestedMilestones from "@/components/SuggestedMilestones";
-import AuthenticatedLayout from "@/components/AuthenticatedLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { LettersView, CreateLetterForm, SuggestedMilestones } from "@/features/letters";
+import { AuthenticatedLayout } from "@/features/auth";
+import { supabase } from "@/shared/config/client";
+import { useToast } from "@/shared/hooks/use-toast";
 
 const Letters = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
