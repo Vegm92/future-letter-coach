@@ -69,7 +69,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
           percentage: milestone.percentage,
           target_date: milestone.target_date,
           description: milestone.description,
-        }))
+        })),
       );
       setShowMilestones(true);
     },
@@ -88,10 +88,10 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   const updateMilestone = (
     index: number,
     field: keyof CreateMilestone,
-    value: string | number
+    value: string | number,
   ) => {
     const updated = milestones.map((milestone, i) =>
-      i === index ? { ...milestone, [field]: value } : milestone
+      i === index ? { ...milestone, [field]: value } : milestone,
     );
     setMilestones(updated);
   };
@@ -185,7 +185,9 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
             : "Your future self will receive this on the scheduled date.",
       });
 
-      onSuccess(letterData);
+      if (onSuccess) {
+        onSuccess(letterData);
+      }
       onClose();
     } catch (error) {
       console.error("Error creating letter:", error);
@@ -223,7 +225,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
-                  required
                 />
               </div>
 
@@ -237,7 +238,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                     setFormData({ ...formData, send_date: e.target.value })
                   }
                   min={format(addDays(new Date(), 1), "yyyy-MM-dd")}
-                  required
                 />
               </div>
             </div>
@@ -252,7 +252,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                   setFormData({ ...formData, goal: e.target.value })
                 }
                 className="min-h-[80px]"
-                required
               />
             </div>
 
@@ -266,7 +265,6 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                   setFormData({ ...formData, content: e.target.value })
                 }
                 className="min-h-[150px]"
-                required
               />
             </div>
 
@@ -535,11 +533,11 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                                     <div className="text-muted-foreground">
                                       Target:{" "}
                                       {new Date(
-                                        milestone.target_date
+                                        milestone.target_date,
                                       ).toLocaleDateString()}
                                     </div>
                                   </div>
-                                )
+                                ),
                               )}
                             </div>
                           </div>
@@ -570,6 +568,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowMilestones(!showMilestones)}
+                  aria-expanded={showMilestones}
                 >
                   {showMilestones ? "Hide" : "Add"} Milestones
                 </Button>
@@ -630,7 +629,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                               updateMilestone(
                                 index,
                                 "percentage",
-                                parseInt(e.target.value) || 0
+                                parseInt(e.target.value) || 0,
                               )
                             }
                           />
@@ -649,7 +648,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                             updateMilestone(
                               index,
                               "target_date",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           min={format(new Date(), "yyyy-MM-dd")}
@@ -668,7 +667,7 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
                             updateMilestone(
                               index,
                               "description",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           className="min-h-[60px]"
