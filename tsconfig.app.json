@@ -23,7 +23,15 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/atoms/*": ["./src/atoms/*"],
+      "@/molecules/*": ["./src/molecules/*"],
+      "@/organisms/*": ["./src/organisms/*"],
+      "@/templates/*": ["./src/templates/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/infrastructure/*": ["./src/infrastructure/*"]
     }
   },
   "include": ["src"]

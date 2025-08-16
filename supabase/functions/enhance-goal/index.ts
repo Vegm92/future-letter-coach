@@ -1,55 +1,97 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://esm.sh/zod@3.23.8";
+import {
+  corsHeaders,
+  createErrorResponse,
+  createSuccessResponse,
+  verifyJWT,
+  validateInput,
+  callOpenAI,
+  logFunctionCall,
+  logFunctionResult,
+} from "../_shared/utils.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Input validation schema for goal enhancement
+const GoalEnhancementSchema = z.object({
+  goal: z.string().min(1, "Goal is required"),
+});
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+interface GoalEnhancementRequest {
+  goal: string;
+}
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify JWT token
+  const authHeader = req.headers.get("authorization");
+  const { user, error: authError } = await verifyJWT(authHeader);
+
+  if (authError || !user) {
+    return createErrorResponse(
+      "UNAUTHORIZED",
+      "Authentication required",
+      { authError },
+      401
+    );
+  }
+
   try {
-    const { goal } = await req.json();
+    const requestData: GoalEnhancementRequest = await req.json();
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a goal clarity expert. Transform vague goals into specific, measurable, inspiring goals. Make them SMART (Specific, Measurable, Achievable, Relevant, Time-bound) while keeping the user\'s original intent and passion. Keep it concise but motivating.'
-          },
-          {
-            role: 'user',
-            content: `Please rewrite this goal to be more specific, measurable, and inspiring: "${goal}"`
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.7,
-      }),
-    });
+    // Log function call
+    logFunctionCall("enhance-goal", requestData, user.id);
 
-    const data = await response.json();
-    const enhancedGoal = data.choices[0].message.content;
+    // Validate input
+    const validation = validateInput(GoalEnhancementSchema, requestData);
+    if (validation.error) {
+      return createErrorResponse("VALIDATION_ERROR", validation.error);
+    }
 
-    return new Response(JSON.stringify({ enhancedGoal }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const { goal } = requestData;
+
+    // Call OpenAI API
+    const openAIResult = await callOpenAI(
+      [
+        {
+          role: "system",
+          content:
+            "You are a goal clarity expert. Transform vague goals into specific, measurable, inspiring goals. Make them SMART (Specific, Measurable, Achievable, Relevant, Time-bound) while keeping the user's original intent and passion. Keep it concise but motivating.",
+        },
+        {
+          role: "user",
+          content: `Please rewrite this goal to be more specific, measurable, and inspiring: "${goal}"`,
+        },
+      ],
+      200,
+      0.7
+    );
+
+    if (openAIResult.error) {
+      return createErrorResponse("OPENAI_API_ERROR", "Failed to enhance goal", {
+        openAIError: openAIResult.error,
+      });
+    }
+
+    const enhancedGoal = openAIResult.data.choices[0].message.content;
+
+    // Log successful result
+    logFunctionResult("enhance-goal", { enhancedGoal });
+
+    // Return success response
+    return createSuccessResponse({ enhancedGoal });
   } catch (error) {
-    console.error('Error enhancing goal:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // Log error
+    logFunctionResult("enhance-goal", null, error);
+
+    return createErrorResponse(
+      "INTERNAL_ERROR",
+      "An unexpected error occurred",
+      { error: error.message }
+    );
   }
 });

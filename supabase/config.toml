@@ -1,4 +1,13 @@
 project_id = "uzobpcqhwdreeltvdusc"
 
 [functions.enhance-goal]
-verify_jwt = false
+verify_jwt = true
+
+[functions.enhance-letter]
+verify_jwt = true
+
+[functions.suggest-milestones]
+verify_jwt = true
+
+[functions.trigger-letter-delivery]
+verify_jwt = true

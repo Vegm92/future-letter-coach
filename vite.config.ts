@@ -17,6 +17,15 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@/design-system": path.resolve(__dirname, "./src/design-system"),
+      "@/atoms": path.resolve(__dirname, "./src/atoms"),
+      "@/molecules": path.resolve(__dirname, "./src/molecules"),
+      "@/organisms": path.resolve(__dirname, "./src/organisms"),
+      "@/templates": path.resolve(__dirname, "./src/templates"),
+      "@/pages": path.resolve(__dirname, "./src/pages"),
+      "@/features": path.resolve(__dirname, "./src/features"),
+      "@/shared": path.resolve(__dirname, "./src/shared"),
+      "@/infrastructure": path.resolve(__dirname, "./src/infrastructure"),
     },
   },
 }));

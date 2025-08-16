@@ -1,78 +1,123 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import {
+  corsHeaders,
+  createErrorResponse,
+  createSuccessResponse,
+  verifyJWT,
+  validateInput,
+  LetterDeliverySchema,
+  logFunctionCall,
+  logFunctionResult,
+} from "../_shared/utils.ts";
 
 interface TriggerDeliveryRequest {
   letterId: string;
-  action: 'schedule' | 'send';
+  action: "schedule" | "send";
 }
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  // Verify JWT token
+  const authHeader = req.headers.get("authorization");
+  const { user, error: authError } = await verifyJWT(authHeader);
+
+  if (authError || !user) {
+    return createErrorResponse(
+      "UNAUTHORIZED",
+      "Authentication required",
+      { authError },
+      401
     );
+  }
 
-    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
+  try {
+    const requestData: TriggerDeliveryRequest = await req.json();
 
-    const { letterId, action }: TriggerDeliveryRequest = await req.json();
+    // Log function call
+    logFunctionCall("trigger-letter-delivery", requestData, user.id);
 
-    console.log(`Processing ${action} request for letter ${letterId}`);
+    // Validate input
+    const validation = validateInput(LetterDeliverySchema, requestData);
+    if (validation.error) {
+      return createErrorResponse("VALIDATION_ERROR", validation.error);
+    }
+
+    const { letterId, action } = requestData;
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return createErrorResponse(
+        "CONFIGURATION_ERROR",
+        "Supabase configuration missing"
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the letter details
     const { data: letter, error: letterError } = await supabase
-      .from('letters')
-      .select('*')
-      .eq('id', letterId)
+      .from("letters")
+      .select("*")
+      .eq("id", letterId)
       .single();
 
     if (letterError) {
-      console.error('Error fetching letter:', letterError);
-      throw letterError;
+      return createErrorResponse("LETTER_NOT_FOUND", "Error fetching letter", {
+        letterError,
+      });
     }
 
-    // Get user email
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('email')
-      .eq('user_id', letter.user_id)
+    // Verify the letter belongs to the authenticated user
+    if (letter.user_id !== user.id) {
+      return createErrorResponse(
+        "FORBIDDEN",
+        "Access denied to this letter",
+        { letterUserId: letter.user_id, currentUserId: user.id },
+        403
+      );
+    }
+
+    // Get user email from profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("user_id", letter.user_id)
       .single();
 
-    if (userError || !user?.email) {
-      console.error('Error fetching user email:', userError);
-      throw new Error('User email not found');
+    if (profileError || !profile?.email) {
+      return createErrorResponse("USER_NOT_FOUND", "User email not found", {
+        profileError,
+      });
     }
 
     let emailSent = false;
     let emailError = null;
 
     // Send email if action is 'send'
-    if (action === 'send') {
+    if (action === "send") {
       try {
-        const startTime = Date.now();
-        console.log(`=== EMAIL DELIVERY START ===`);
-        console.log(`Timestamp: ${new Date().toISOString()}`);
-        console.log(`Letter ID: ${letterId}`);
-        console.log(`Recipient: ${user.email}`);
-        console.log(`Letter Title: ${letter.title}`);
-        console.log(`Letter Content Preview: ${letter.content.substring(0, 100)}...`);
-        console.log(`Letter Goal: ${letter.goal}`);
-        console.log(`Send Date: ${letter.send_date}`);
-        
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        if (!resendApiKey) {
+          return createErrorResponse(
+            "CONFIGURATION_ERROR",
+            "Resend API key not configured"
+          );
+        }
+
+        const resend = new Resend(resendApiKey);
+
         const emailPayload = {
-          from: 'Vision Vault <onboarding@resend.dev>',
-          to: [user.email],
+          from: "Vision Vault <onboarding@resend.dev>",
+          to: [profile.email],
           subject: `Letter: ${letter.title}`,
           html: `
             <!DOCTYPE html>
@@ -116,10 +161,12 @@ const handler = async (req: Request): Promise<Response> => {
                       ${letter.title}
                     </h2>
                     <p style="margin: 0; color: #6b7280; font-size: 14px;">
-                      Delivered on ${new Date(letter.send_date).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                      Delivered on ${new Date(
+                        letter.send_date
+                      ).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
                       })}
                     </p>
                   </div>
@@ -149,6 +196,24 @@ const handler = async (req: Request): Promise<Response> => {
                     </div>
                   </div>
                   
+                  <!-- Voice Memo Section -->
+                  ${
+                    letter.voice_memo_url
+                      ? `
+                  <div style="margin-top: 30px; text-align: center;">
+                    <h3 style="margin: 0 0 10px 0; color: #374151; font-size: 18px; font-weight: 600;">Voice Memo</h3>
+                    <audio controls style="width: 100%; max-width: 400px; margin: 0 auto;">
+                      <source src="${letter.voice_memo_url}" type="audio/mpeg" />
+                      Your browser does not support the audio element.
+                    </audio>
+                    <div style="margin-top: 8px;">
+                      <a href="${letter.voice_memo_url}" style="color: #4f46e5; text-decoration: underline; font-size: 14px;" download>Download Voice Memo</a>
+                    </div>
+                  </div>
+                  `
+                      : ""
+                  }
+                  
                   <!-- Reflection Prompt -->
                   <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 1px solid #f59e0b; border-radius: 12px; padding: 20px; margin-top: 30px; text-align: center;">
                     <p style="margin: 0; color: #92400e; font-size: 15px; font-weight: 500;">
@@ -174,102 +239,86 @@ const handler = async (req: Request): Promise<Response> => {
             </html>
           `,
         };
-        
-        console.log(`=== EMAIL PAYLOAD ===`);
-        console.log(`From: ${emailPayload.from}`);
-        console.log(`To: ${emailPayload.to.join(', ')}`);
-        console.log(`Subject: ${emailPayload.subject}`);
-        console.log(`HTML Content Length: ${emailPayload.html.length} characters`);
-        
-        console.log(`Sending email via Resend API...`);
+
         const emailResponse = await resend.emails.send(emailPayload);
-        
-        const duration = Date.now() - startTime;
-        console.log(`=== EMAIL DELIVERY SUCCESS ===`);
-        console.log(`Duration: ${duration}ms`);
-        console.log(`Email ID: ${emailResponse.data?.id || 'N/A'}`);
-        console.log(`Response:`, JSON.stringify(emailResponse, null, 2));
-        console.log(`=== EMAIL DELIVERY END ===`);
-        
         emailSent = true;
       } catch (error: any) {
-        const duration = Date.now() - (Date.now() - 1000); // Approximate duration
-        console.error(`=== EMAIL DELIVERY FAILED ===`);
-        console.error(`Duration: ${duration}ms`);
-        console.error(`Error Type: ${error.constructor.name}`);
-        console.error(`Error Message: ${error.message}`);
-        console.error(`Full Error:`, JSON.stringify(error, null, 2));
-        console.error(`=== EMAIL DELIVERY END ===`);
         emailError = error.message;
       }
     }
 
     // Create notification record
-    const notificationStatus = action === 'schedule' ? 'pending' : (emailSent ? 'sent' : 'failed');
+    const notificationStatus =
+      action === "schedule" ? "pending" : emailSent ? "sent" : "failed";
     const { error: notificationError } = await supabase
-      .from('notifications')
+      .from("notifications")
       .insert({
         user_id: letter.user_id,
         letter_id: letter.id,
-        type: 'letter_delivery',
+        type: "letter_delivery",
         subject: `Letter: ${letter.title}`,
-        content: action === 'schedule' 
-          ? `Your letter "${letter.title}" has been scheduled for delivery on ${letter.send_date}`
-          : (emailSent ? `Your letter "${letter.title}" has been delivered` : `Failed to deliver letter "${letter.title}"`),
-        scheduled_for: action === 'schedule' ? letter.send_date : new Date().toISOString(),
-        delivery_method: 'email',
+        content:
+          action === "schedule"
+            ? `Your letter "${letter.title}" has been scheduled for delivery on ${letter.send_date}`
+            : emailSent
+            ? `Your letter "${letter.title}" has been delivered`
+            : `Failed to deliver letter "${letter.title}"`,
+        scheduled_for:
+          action === "schedule" ? letter.send_date : new Date().toISOString(),
+        delivery_method: "email",
         status: notificationStatus,
         error_message: emailError,
-        sent_at: emailSent ? new Date().toISOString() : null
+        sent_at: emailSent ? new Date().toISOString() : null,
       });
 
     if (notificationError) {
-      console.error('Error creating notification:', notificationError);
-      throw notificationError;
+      return createErrorResponse(
+        "NOTIFICATION_ERROR",
+        "Error creating notification",
+        { notificationError }
+      );
     }
 
-    // Update letter status only if email was sent successfully (or if just scheduling)
-    const newStatus = action === 'schedule' ? 'scheduled' : (emailSent ? 'sent' : 'scheduled');
+    // Update letter status
+    const newStatus =
+      action === "schedule" ? "scheduled" : emailSent ? "sent" : "scheduled";
     const { error: updateError } = await supabase
-      .from('letters')
+      .from("letters")
       .update({ status: newStatus })
-      .eq('id', letterId);
+      .eq("id", letterId);
 
     if (updateError) {
-      console.error('Error updating letter status:', updateError);
-      throw updateError;
+      return createErrorResponse(
+        "UPDATE_ERROR",
+        "Error updating letter status",
+        { updateError }
+      );
     }
 
-    console.log(`Successfully processed ${action} for letter ${letterId}`);
+    // Log successful result
+    logFunctionResult("trigger-letter-delivery", {
+      action,
+      letterId,
+      newStatus,
+      emailSent,
+    });
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Letter ${action === 'schedule' ? 'scheduled' : 'sent'} successfully`,
-        newStatus 
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          ...corsHeaders,
-        },
-      }
-    );
+    // Return success response
+    return createSuccessResponse({
+      message: `Letter ${
+        action === "schedule" ? "scheduled" : "sent"
+      } successfully`,
+      newStatus,
+      emailSent,
+    });
   } catch (error: any) {
-    console.error('Error in trigger-letter-delivery function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
-      }),
-      {
-        status: 500,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...corsHeaders 
-        },
-      }
+    // Log error
+    logFunctionResult("trigger-letter-delivery", null, error);
+
+    return createErrorResponse(
+      "INTERNAL_ERROR",
+      "An unexpected error occurred",
+      { error: error.message }
     );
   }
 };

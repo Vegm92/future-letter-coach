@@ -1,43 +1,75 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.53.0';
+import {
+  corsHeaders,
+  createErrorResponse,
+  createSuccessResponse,
+  verifyJWT,
+  validateInput,
+  MilestoneSuggestionSchema,
+  callOpenAI,
+  logFunctionCall,
+  logFunctionResult,
+} from "../_shared/utils.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+interface MilestoneSuggestionRequest {
+  letterId: string;
+  goal: string;
+  content?: string;
+  sendDate: string;
+}
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+interface Milestone {
+  title: string;
+  percentage: number;
+  target_date: string;
+  description: string;
+}
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify JWT token
+  const authHeader = req.headers.get("authorization");
+  const { user, error: authError } = await verifyJWT(authHeader);
+
+  if (authError || !user) {
+    return createErrorResponse(
+      "UNAUTHORIZED",
+      "Authentication required",
+      { authError },
+      401
+    );
+  }
+
   try {
-    const { letterId, goal, content, sendDate } = await req.json();
-    
-    if (!letterId || !goal) {
-      return new Response(
-        JSON.stringify({ error: 'Letter ID and goal are required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const requestData: MilestoneSuggestionRequest = await req.json();
+
+    // Log function call
+    logFunctionCall("suggest-milestones", requestData, user.id);
+
+    // Validate input
+    const validation = validateInput(MilestoneSuggestionSchema, requestData);
+    if (validation.error) {
+      return createErrorResponse("VALIDATION_ERROR", validation.error);
     }
 
-    console.log('Generating milestone suggestions for letter:', letterId);
+    const { letterId, goal, content, sendDate } = requestData;
 
     // Calculate days between now and send date
     const today = new Date();
     const targetDate = new Date(sendDate);
-    const totalDays = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const totalDays = Math.ceil(
+      (targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
-    const prompt = `
-You are an expert goal achievement coach. Based on the following information, suggest 3-5 logical, achievable milestones that will help accomplish this goal.
+    const prompt = `You are an expert goal achievement coach. Based on the following information, suggest 3-5 logical, achievable milestones that will help accomplish this goal.
 
 Goal: ${goal}
-Additional Context: ${content || 'No additional context provided'}
+Additional Context: ${content || "No additional context provided"}
 Timeline: ${totalDays} days until target date (${sendDate})
 
 Requirements:
@@ -59,78 +91,75 @@ Return ONLY a valid JSON array of milestone objects with this exact structure:
 ]
 
 Keep titles concise (max 50 characters) and descriptions helpful but brief (max 150 characters).
-Ensure percentages add up logically and target dates are distributed across the timeline.
-`;
+Ensure percentages add up logically and target dates are distributed across the timeline.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are a goal achievement expert. Return only valid JSON arrays of milestone objects as requested. No additional text or formatting.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
+    // Call OpenAI API
+    const openAIResult = await callOpenAI(
+      [
+        {
+          role: "system",
+          content:
+            "You are a goal achievement expert. Return only valid JSON arrays of milestone objects as requested. No additional text or formatting.",
+        },
+        { role: "user", content: prompt },
+      ],
+      1000,
+      0.7
+    );
 
-    if (!response.ok) {
-      console.error('OpenAI API error:', await response.text());
-      throw new Error('Failed to generate milestone suggestions');
+    if (openAIResult.error) {
+      return createErrorResponse(
+        "OPENAI_API_ERROR",
+        "Failed to generate milestone suggestions",
+        { openAIError: openAIResult.error }
+      );
     }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0].message.content;
-    
-    console.log('AI response:', aiResponse);
-
     // Parse the JSON response
-    let suggestedMilestones;
+    let suggestedMilestones: Milestone[];
     try {
+      const aiResponse = openAIResult.data.choices[0].message.content;
       suggestedMilestones = JSON.parse(aiResponse);
     } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      console.error('Raw response:', aiResponse);
-      throw new Error('Invalid response format from AI');
+      return createErrorResponse(
+        "PARSE_ERROR",
+        "Invalid response format from AI",
+        { parseError: parseError.message }
+      );
     }
 
     // Validate the response structure
     if (!Array.isArray(suggestedMilestones)) {
-      throw new Error('AI response is not an array');
+      return createErrorResponse(
+        "VALIDATION_ERROR",
+        "AI response is not an array"
+      );
     }
 
     // Validate each milestone has required fields
     for (const milestone of suggestedMilestones) {
       if (!milestone.title || !milestone.percentage || !milestone.target_date) {
-        throw new Error('Invalid milestone structure');
+        return createErrorResponse(
+          "VALIDATION_ERROR",
+          "Invalid milestone structure",
+          { milestone }
+        );
       }
     }
 
-    console.log('Generated milestones:', suggestedMilestones);
+    // Log successful result
+    logFunctionResult("suggest-milestones", { suggestedMilestones });
 
-    return new Response(
-      JSON.stringify({ suggestedMilestones }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-
+    // Return success response
+    return createSuccessResponse({ suggestedMilestones });
   } catch (error) {
-    console.error('Error in suggest-milestones function:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+    // Log error
+    logFunctionResult("suggest-milestones", null, error);
+
+    return createErrorResponse(
+      "INTERNAL_ERROR",
+      "An unexpected error occurred",
+      { error: error.message }
     );
   }
 });
