@@ -3,12 +3,12 @@ import { Label } from "@/components/ui/label";
 import { Mic, MicOff } from "lucide-react";
 import type { VoiceMemoSectionProps } from "@/types/components";
 
-export const VoiceMemoSection = ({
+export function VoiceMemoSection({
   isRecording,
   isLocked,
   hasVoiceMemo,
   onToggleRecording
-}: VoiceMemoSectionProps) => {
+}: VoiceMemoSectionProps) {
   const buttonIcon = isRecording ? MicOff : Mic;
   const buttonText = isRecording ? "Stop Recording" : "Record Voice Memo";
   const IconComponent = buttonIcon;
@@ -35,4 +35,4 @@ export const VoiceMemoSection = ({
       )}
     </div>
   );
-};
+}

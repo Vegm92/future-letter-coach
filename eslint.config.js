@@ -25,5 +25,27 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
+  // Disable Fast Refresh warnings for UI library components
+  {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  // Disable Fast Refresh warnings for test utilities and allow any types in tests
+  {
+    files: ["src/test/**/*.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    rules: {
+      "react-refresh/only-export-components": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  // Allow any types in Supabase functions (third-party integration)
+  {
+    files: ["supabase/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
   }
 );

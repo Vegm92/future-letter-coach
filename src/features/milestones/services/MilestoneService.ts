@@ -42,7 +42,13 @@ export class MilestoneService {
    * Update an existing milestone
    */
   async updateMilestone(request: UpdateMilestoneRequest): Promise<Milestone> {
-    const updateData: any = {};
+    const updateData: Partial<{
+      title: string;
+      percentage: number;
+      target_date: string;
+      description: string | null;
+      completed: boolean;
+    }> = {};
     
     if (request.title !== undefined) updateData.title = request.title.trim();
     if (request.percentage !== undefined) updateData.percentage = request.percentage;

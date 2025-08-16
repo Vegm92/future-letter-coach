@@ -21,7 +21,7 @@ export function useSettings(): UseSettingsReturn {
     if (profile?.id) {
       loadSettings();
     }
-  }, [profile?.id]);
+  }, [profile?.id, loadSettings]);
 
   const loadSettings = useCallback(async () => {
     try {

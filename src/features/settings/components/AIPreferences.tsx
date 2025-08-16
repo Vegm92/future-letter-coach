@@ -19,7 +19,7 @@ const AIPreferences = () => {
   }>({});
 
   const currentPrefs = localChanges.ai_preferences ?? 
-    mergeAIPreferences(profile?.ai_preferences as any);
+    mergeAIPreferences(profile?.ai_preferences ?? {});
 
   const handleSave = async () => {
     if (localChanges.ai_preferences) {

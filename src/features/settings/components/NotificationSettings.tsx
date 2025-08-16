@@ -8,24 +8,28 @@ import { useProfile } from "@/features/settings/hooks/useProfile";
 
 const NotificationSettings = () => {
   const { profile, saving, updateProfile } = useProfile();
+  interface NotificationPreferences {
+    email: boolean;
+    push: boolean;
+    draft_reminders: boolean;
+    delivery_alerts: boolean;
+    enhancement_notifications: boolean;
+    milestone_reminders: boolean;
+  }
+
   const [localChanges, setLocalChanges] = useState<{
-    notification_preferences?: {
-      email: boolean;
-      push: boolean;
-      draft_reminders?: boolean;
-      delivery_alerts?: boolean;
-      enhancement_notifications?: boolean;
-      milestone_reminders?: boolean;
-    };
+    notification_preferences?: Partial<NotificationPreferences>;
   }>({});
 
-  const currentPrefs = localChanges.notification_preferences ?? profile?.notification_preferences ?? {
+  const currentPrefs: NotificationPreferences = {
     email: true,
     push: false,
     draft_reminders: true,
     delivery_alerts: true,
     enhancement_notifications: true,
     milestone_reminders: true,
+    ...profile?.notification_preferences,
+    ...localChanges.notification_preferences,
   };
 
   const handleSave = async () => {
@@ -35,7 +39,7 @@ const NotificationSettings = () => {
     }
   };
 
-  const updateNotificationPrefs = (updates: Partial<typeof currentPrefs>) => {
+  const updateNotificationPrefs = (updates: Partial<NotificationPreferences>) => {
     setLocalChanges(prev => ({
       ...prev,
       notification_preferences: { ...currentPrefs, ...updates }
@@ -102,7 +106,7 @@ const NotificationSettings = () => {
               </p>
             </div>
             <Switch
-              checked={(currentPrefs as any).draft_reminders ?? true}
+              checked={currentPrefs.draft_reminders}
               onCheckedChange={(draft_reminders) => updateNotificationPrefs({ draft_reminders })}
               disabled={!currentPrefs.email && !currentPrefs.push}
             />
@@ -116,7 +120,7 @@ const NotificationSettings = () => {
               </p>
             </div>
             <Switch
-              checked={(currentPrefs as any).delivery_alerts ?? true}
+              checked={currentPrefs.delivery_alerts}
               onCheckedChange={(delivery_alerts) => updateNotificationPrefs({ delivery_alerts })}
               disabled={!currentPrefs.email && !currentPrefs.push}
             />
@@ -130,7 +134,7 @@ const NotificationSettings = () => {
               </p>
             </div>
             <Switch
-              checked={(currentPrefs as any).enhancement_notifications ?? true}
+              checked={currentPrefs.enhancement_notifications}
               onCheckedChange={(enhancement_notifications) => updateNotificationPrefs({ enhancement_notifications })}
               disabled={!currentPrefs.email && !currentPrefs.push}
             />
@@ -144,7 +148,7 @@ const NotificationSettings = () => {
               </p>
             </div>
             <Switch
-              checked={(currentPrefs as any).milestone_reminders ?? true}
+              checked={currentPrefs.milestone_reminders}
               onCheckedChange={(milestone_reminders) => updateNotificationPrefs({ milestone_reminders })}
               disabled={!currentPrefs.email && !currentPrefs.push}
             />

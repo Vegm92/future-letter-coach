@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,13 +19,13 @@ import { useToast } from "@/shared/hooks/use-toast";
 import LetterCard from "./LetterCard/LetterCard";
 import LetterDetail from "./LetterDetail";
 import EditLetterForm from "./EditLetterForm";
-import { VisionVaultProps } from "@/types";
+import { VisionVaultProps, Letter } from "@/types";
 
 const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
-  const [letters, setLetters] = useState<any[]>([]);
+  const [letters, setLetters] = useState<Letter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
-  const [editingLetter, setEditingLetter] = useState<any | null>(null);
+  const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
+  const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
@@ -35,11 +35,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchLetters();
-  }, []);
-
-  const fetchLetters = async () => {
+  const fetchLetters = useCallback(async () => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return;
@@ -75,7 +71,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
       lettersData?.forEach(letter => {
         if (letter.milestones) {
           totalMilestones += letter.milestones.length;
-          completedMilestones += letter.milestones.filter((m: any) => m.completed).length;
+          completedMilestones += letter.milestones.filter((m) => m.completed).length;
         }
       });
       
@@ -94,24 +90,28 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  const handleEditLetter = (letter: any) => {
+  useEffect(() => {
+    fetchLetters();
+  }, [fetchLetters]);
+
+  const handleEditLetter = (letter: Letter) => {
     setEditingLetter(letter);
     setShowDetail(false);
   };
 
-  const handleViewLetter = (letter: any) => {
+  const handleViewLetter = (letter: Letter) => {
     setSelectedLetter(letter);
     setShowDetail(true);
   };
 
-  const handleUpdateLetter = (updatedLetter: any) => {
+  const handleUpdateLetter = (updatedLetter: Letter) => {
     setLetters(letters.map(l => l.id === updatedLetter.id ? updatedLetter : l));
     setSelectedLetter(updatedLetter);
   };
 
-  const handleEditSuccess = (updatedLetter: any) => {
+  const handleEditSuccess = (updatedLetter: Letter) => {
     setLetters(letters.map(l => l.id === updatedLetter.id ? updatedLetter : l));
     setEditingLetter(null);
     setSelectedLetter(updatedLetter);
@@ -126,7 +126,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
     });
   };
 
-  const handleTriggerDelivery = async (letter: any) => {
+  const handleTriggerDelivery = async (letter: Letter) => {
     try {
       const action = letter.status === 'draft' ? 'schedule' : 'send';
       
@@ -165,7 +165,7 @@ const VisionVault = ({ onCreateClick }: VisionVaultProps) => {
     }
   };
 
-  const handleStatusChange = async (letter: any, newStatus: string) => {
+  const handleStatusChange = async (letter: Letter, newStatus: string) => {
     try {
       // Update letter status in database
       const { error: updateError } = await supabase

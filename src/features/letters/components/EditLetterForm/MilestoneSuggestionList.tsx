@@ -3,12 +3,12 @@ import { Label } from "@/components/ui/label";
 import { Check, Loader2 } from "lucide-react";
 import type { MilestoneSuggestionListProps } from "@/types/components";
 
-export const MilestoneSuggestionList = ({
+export function MilestoneSuggestionList({
   milestones,
   isApplied,
   isApplying,
   onApply
-}: MilestoneSuggestionListProps) => {
+}: MilestoneSuggestionListProps) {
   if (!milestones?.length) return null;
 
   const buttonText = isApplying ? 'Applying...' : isApplied ? 'Applied' : 'Apply Milestones';
@@ -46,4 +46,4 @@ export const MilestoneSuggestionList = ({
       </div>
     </div>
   );
-};
+}

@@ -155,7 +155,7 @@ const LetterDetail = ({
               {letter.title}
             </DialogTitle>
             <div className="flex items-center space-x-2 shrink-0">
-              <Badge variant={getStatusColor(letter.status) as any}>
+              <Badge variant={getStatusColor(letter.status) as 'secondary' | 'default' | 'success' | 'outline'}>
                 {getStatusLabel(letter.status)}
               </Badge>
               {onDelete && (

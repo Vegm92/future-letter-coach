@@ -185,8 +185,11 @@ describe("CreateLetterForm", () => {
       const user = userEvent.setup();
 
       // Get the mocked Supabase from the module mock
-      const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const { supabase } = await import('@/shared/config/client')
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      }
 
       // Mock successful Supabase calls
       mockSupabase.auth.getUser.mockResolvedValue({
@@ -233,10 +236,13 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       // Mock Supabase to return a promise that we can control
-      let resolveSubmit: (value: any) => void;
+      let resolveSubmit: (value: { data: { id: string } | null; error: Error | null }) => void;
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "user-123" } },
         error: null,
@@ -290,7 +296,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       const mockLetter = { id: "letter-123", title: "Test Title" };
       mockSupabase.auth.getUser.mockResolvedValue({
@@ -328,7 +337,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       // Mock Supabase to throw an error
       mockSupabase.auth.getUser.mockResolvedValue({
@@ -372,7 +384,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       // Mock auth failure
       mockSupabase.auth.getUser.mockResolvedValue({
@@ -528,7 +543,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "user-123" } },
@@ -612,7 +630,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "user-123" } },
@@ -689,7 +710,10 @@ describe("CreateLetterForm", () => {
 
       // Get the mocked Supabase from the module mock
       const { supabase } = await import("@/shared/config/client");
-      const mockSupabase = supabase as any;
+      const mockSupabase = supabase as {
+        auth: { getUser: ReturnType<typeof vi.fn> }
+        from: ReturnType<typeof vi.fn>
+      };
 
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "user-123" } },
@@ -710,7 +734,7 @@ describe("CreateLetterForm", () => {
       render(
         <CreateLetterForm
           onClose={mockHandlers.onClose}
-          onSuccess={undefined as any}
+          onSuccess={undefined as ((letter: { id: string; title: string }) => void) | undefined}
         />,
       );
 

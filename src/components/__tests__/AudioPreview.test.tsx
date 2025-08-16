@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@/test/utils'
 import userEvent from '@testing-library/user-event'
-import AudioPreview from '../AudioPreview'
+import { AudioPreview } from '@/features/voice-memo/components'
 
 describe('AudioPreview', () => {
   const defaultProps = {

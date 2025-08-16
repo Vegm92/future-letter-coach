@@ -6,7 +6,7 @@ import { MilestoneSuggestionList } from "./MilestoneSuggestionList";
 import { EnhancementActions } from "./EnhancementActions";
 import type { EnhancementSectionProps } from "@/types/components";
 
-export const EnhancementSection = ({ enhancement, canEnhance }: EnhancementSectionProps) => {
+export function EnhancementSection({ enhancement, canEnhance }: EnhancementSectionProps) {
   if (!canEnhance) return null;
 
   const hasEnhancementData = enhancement.hasEnhancementData && enhancement.data;
@@ -85,4 +85,4 @@ export const EnhancementSection = ({ enhancement, canEnhance }: EnhancementSecti
       )}
     </div>
   );
-};
+}

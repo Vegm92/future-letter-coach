@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "lucide-react";
 import type { FormFieldProps } from "@/types/components";
 
-export const FormField = ({
+export function FormField({
   id,
   label,
   type = 'input',
@@ -17,7 +17,7 @@ export const FormField = ({
   rows,
   min,
   helpText
-}: FormFieldProps) => {
+}: FormFieldProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e.target.value);
   };
@@ -66,4 +66,4 @@ export const FormField = ({
       )}
     </div>
   );
-};
+}

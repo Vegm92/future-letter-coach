@@ -1,5 +1,6 @@
 import { supabase } from '@/shared/config/client';
-import type { SignUpRequest, SignInRequest, AuthResponse } from '../types';
+import type { AuthResponse, SignUpRequest, SignInRequest } from '../types';
+import type { Session } from '@supabase/supabase-js';
 
 export class AuthService {
   /**
@@ -108,7 +109,7 @@ export class AuthService {
   /**
    * Listen for auth state changes
    */
-  onAuthStateChange(callback: (event: string, session: any) => void) {
+  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
     return supabase.auth.onAuthStateChange(callback);
   }
 }

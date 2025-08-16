@@ -15,23 +15,25 @@ import { useProfile } from "@/features/settings/hooks/useProfile";
 import { TIMEZONES } from "@/features/settings/constants";
 import { getInitials, createLocalChangeTracker } from "@/features/settings/utils";
 
+interface ProfileChanges {
+  full_name?: string;
+  timezone?: string;
+}
+
 const ProfileSettings = () => {
   const { profile, saving, updateProfile } = useProfile();
-  const [localChanges, setLocalChanges] = useState<{
-    full_name?: string;
-    timezone?: string;
-  }>({});
+  const [localChanges, setLocalChanges] = useState<ProfileChanges>({});
 
-  const tracker = createLocalChangeTracker<typeof localChanges>();
+  const tracker = createLocalChangeTracker<ProfileChanges>();
 
   const handleSave = async () => {
-    if (tracker.hasChanges(localChanges as any)) {
+    if (tracker.hasChanges(localChanges)) {
       await updateProfile(localChanges);
       setLocalChanges({});
     }
   };
 
-  const getDisplayValue = (field: keyof typeof localChanges) => {
+  const getDisplayValue = (field: keyof ProfileChanges) => {
     return tracker.getDisplayValue(field, localChanges, profile, "");
   };
 
@@ -126,7 +128,7 @@ const ProfileSettings = () => {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={saving || !tracker.hasChanges(localChanges as any)}
+          disabled={saving || !tracker.hasChanges(localChanges)}
           className="flex items-center gap-2"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}

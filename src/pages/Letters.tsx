@@ -3,6 +3,7 @@ import { LettersView, CreateLetterForm, SuggestedMilestones } from "@/features/l
 import { AuthenticatedLayout } from "@/features/auth";
 import { supabase } from "@/shared/config/client";
 import { useToast } from "@/shared/hooks/use-toast";
+import type { Letter } from "@/shared/types/database";
 
 const Letters = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -16,7 +17,7 @@ const Letters = () => {
     setShowCreateForm(true);
   };
 
-  const handleCreateSuccess = async (letterData?: any) => {
+  const handleCreateSuccess = async (letterData?: Letter) => {
     setShowCreateForm(false);
     setRefreshKey(prev => prev + 1); // Trigger LettersView refresh
     

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from '@/shared/config/client';
 import { useToast } from "@/shared/hooks/use-toast";
 
@@ -37,7 +37,7 @@ export const useProfile = () => {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -71,17 +71,17 @@ export const useProfile = () => {
       } else {
         setProfile(data as unknown as UserProfile);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching profile:', error);
       toast({
         title: "Error",
-        description: "Failed to load profile settings",
+        description: error instanceof Error ? error.message : "Failed to load profile settings",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!profile) return;
@@ -100,11 +100,11 @@ export const useProfile = () => {
         title: "Settings Saved",
         description: "Your preferences have been updated successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: error instanceof Error ? error.message : "Failed to save settings",
         variant: "destructive",
       });
     } finally {
@@ -114,7 +114,7 @@ export const useProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
   return {
     profile,

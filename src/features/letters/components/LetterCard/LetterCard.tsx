@@ -62,7 +62,7 @@ const LetterCard = ({
       )
     : 0;
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
     switch (status) {
       case "draft":
         return "secondary";
@@ -131,7 +131,7 @@ const LetterCard = ({
             >
               <AlertDialogTrigger asChild>
                 <Badge
-                  variant={getStatusColor(letter.status) as any}
+                  variant={getStatusColor(letter.status)}
                   className="shrink-0 ml-2 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -165,7 +165,7 @@ const LetterCard = ({
             </AlertDialog>
           ) : (
             <Badge
-              variant={getStatusColor(letter.status) as any}
+              variant={getStatusColor(letter.status)}
               className="shrink-0 ml-2"
             >
               {getStatusLabel(letter.status)}

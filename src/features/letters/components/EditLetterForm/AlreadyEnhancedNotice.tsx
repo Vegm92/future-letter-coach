@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 
-export const AlreadyEnhancedNotice = () => {
+export function AlreadyEnhancedNotice() {
   return (
     <div className="p-4 bg-muted/50 rounded-lg border">
       <div className="flex items-center gap-2">
@@ -14,4 +14,4 @@ export const AlreadyEnhancedNotice = () => {
       </p>
     </div>
   );
-};
+}

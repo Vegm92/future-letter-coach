@@ -94,7 +94,7 @@ export const mockFormSubmit = vi.fn()
 export const mockNavigate = vi.fn()
 
 // Mock implementations for common scenarios
-export const mockSuccessfulQuery = (data: any) => ({
+export const mockSuccessfulQuery = <T = unknown>(data: T) => ({
   data,
   error: null,
   isLoading: false,
@@ -110,7 +110,7 @@ export const mockLoadingQuery = () => ({
   isSuccess: false,
 })
 
-export const mockErrorQuery = (error: any) => ({
+export const mockErrorQuery = (error: Error) => ({
   data: undefined,
   error,
   isLoading: false,
@@ -147,8 +147,8 @@ export const mockAudioContext = () => {
     destination: {},
   }
   
-  global.AudioContext = vi.fn(() => mockAudioContext) as any
-  global.webkitAudioContext = vi.fn(() => mockAudioContext) as any
+  global.AudioContext = vi.fn(() => mockAudioContext) as unknown as typeof AudioContext
+  global.webkitAudioContext = vi.fn(() => mockAudioContext) as unknown as typeof AudioContext
   
   return mockAudioContext
 }
@@ -167,6 +167,6 @@ export const mockMediaRecorder = () => {
     onstop: null,
   }
   
-  global.MediaRecorder = vi.fn(() => mockRecorder) as any
+  global.MediaRecorder = vi.fn(() => mockRecorder) as unknown as typeof MediaRecorder
   return mockRecorder
 }

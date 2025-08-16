@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/shared/config/client";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Milestone, MilestoneManagerProps } from "@/types";
+import type { EnhancementResponse } from "@/shared/types/services";
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
 
 const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneManagerProps) => {
@@ -22,7 +23,7 @@ const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneM
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [enhancementData, setEnhancementData] = useState<any>(null);
+  const [enhancementData, setEnhancementData] = useState<EnhancementResponse | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const { toast } = useToast();
 

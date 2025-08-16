@@ -41,7 +41,7 @@ const SuggestedMilestones = ({
     ));
   };
 
-  const updateMilestone = (index: number, field: string, value: any) => {
+  const updateMilestone = (index: number, field: keyof SuggestedMilestone, value: string | number) => {
     setMilestones(prev => prev.map((m, i) => 
       i === index ? { ...m, [field]: value } : m
     ));

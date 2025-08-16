@@ -20,12 +20,12 @@ const AccessibilitySettings = () => {
   }>({});
 
   const currentAccessibility = localChanges.accessibility_preferences ?? 
-    mergeAccessibilityPreferences(profile?.accessibility_preferences as any);
+    mergeAccessibilityPreferences(profile?.accessibility_preferences ?? {});
 
   const currentLanguage = localChanges.language ?? profile?.language ?? 'en';
 
   const handleSave = async () => {
-    const changes: any = {};
+    const changes: Record<string, unknown> = {};
     if (localChanges.language) changes.language = localChanges.language;
     if (localChanges.accessibility_preferences) changes.accessibility_preferences = localChanges.accessibility_preferences;
     

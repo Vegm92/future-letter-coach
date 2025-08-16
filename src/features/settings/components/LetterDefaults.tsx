@@ -20,13 +20,13 @@ const LetterDefaults = () => {
   const tracker = createLocalChangeTracker<typeof localChanges>();
 
   const handleSave = async () => {
-    if (tracker.hasChanges(localChanges as any)) {
+    if (tracker.hasChanges(localChanges)) {
       await updateProfile(localChanges);
       setLocalChanges({});
     }
   };
 
-  const getDisplayValue = <T extends keyof typeof localChanges>(field: T): any => {
+  const getDisplayValue = <T extends keyof typeof localChanges>(field: T): string | number | undefined => {
     return tracker.getDisplayValue(field, localChanges, profile, 
       field === 'default_send_date_offset' ? DEFAULT_SETTINGS.SEND_DATE_OFFSET : '');
   };
@@ -114,7 +114,7 @@ const LetterDefaults = () => {
       <div className="flex justify-end">
         <Button 
           onClick={handleSave} 
-          disabled={saving || !tracker.hasChanges(localChanges as any)}
+          disabled={saving || !tracker.hasChanges(localChanges)}
           className="flex items-center gap-2"
         >
           {saving && <Loader2 className="h-4 w-4 animate-spin" />}

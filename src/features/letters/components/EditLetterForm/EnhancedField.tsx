@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Check, Loader2 } from "lucide-react";
 import type { EnhancedFieldProps } from "@/types/components";
 
-export const EnhancedField = ({ 
+export function EnhancedField({ 
   label, 
   value, 
   fieldKey, 
@@ -11,7 +11,7 @@ export const EnhancedField = ({
   isLoading, 
   onApply,
   className = ""
-}: EnhancedFieldProps) => {
+}: EnhancedFieldProps) {
   const buttonText = isLoading ? 'Applying...' : isApplied ? 'Applied' : 'Apply';
   const isDisabled = isApplied || isLoading;
   return (
@@ -38,4 +38,4 @@ export const EnhancedField = ({
       </div>
     </div>
   );
-};
+}

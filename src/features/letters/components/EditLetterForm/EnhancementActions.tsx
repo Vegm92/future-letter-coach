@@ -4,12 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, AlertCircle } from "lucide-react";
 import type { EnhancementActionsProps } from "@/types/components";
 
-export const EnhancementActions = ({
+export function EnhancementActions({
   state,
   canEnhance,
   onEnhance,
   onRetry
-}: EnhancementActionsProps) => {
+}: EnhancementActionsProps) {
   const isLoading = state === 'loading';
   const isSuccess = state === 'success';
   const isError = state === 'error';
@@ -57,4 +57,4 @@ export const EnhancementActions = ({
       )}
     </div>
   );
-};
+}
