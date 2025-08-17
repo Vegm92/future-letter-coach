@@ -10,7 +10,15 @@ import { format, parseISO } from "date-fns";
 import { supabase } from "@/shared/config/client";
 import { useToast } from "@/shared/hooks/use-toast";
 import { Milestone, MilestoneManagerProps } from "@/types";
-import type { EnhancementResponse } from "@/shared/types/services";
+// Enhancement response type defined inline since we removed services
+interface EnhancementResponse {
+  suggestedMilestones: Array<{
+    title: string;
+    description: string;
+    percentage: number;
+    target_date: string;
+  }>;
+}
 import InlineMilestoneSuggestions from "./InlineMilestoneSuggestions";
 
 const MilestoneManager = ({ letterId, milestones, onUpdate, letter }: MilestoneManagerProps) => {

@@ -1,3 +1,2 @@
 // Enhancement feature public interface
-export * from './hooks';
-export * from './services';
+// All enhancement logic moved to /src/hooks/useEnhancement.ts
