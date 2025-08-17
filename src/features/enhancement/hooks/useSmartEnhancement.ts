@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useToast } from "@/shared/hooks/use-toast";
 import { EnhancementService } from "../services";
 
@@ -7,11 +7,13 @@ const enhancementService = new EnhancementService();
 import { logApiCall, handleApiError } from "@/shared/utils/api.utils";
 import type { 
   EnhancementRequest, 
+  EdgeFunctionResponse,
   EnhancementResponse,
   MilestoneSuggestionRequest,
   MilestoneSuggestionResponse 
 } from "../services/enhancementService";
 
+// Legacy hook types for backward compatibility
 interface EnhancementState {
   isEnhancing: boolean;
   isSuggestingMilestones: boolean;
@@ -31,12 +33,68 @@ interface EnhancementActions {
   getUsageStats: (userId: string) => Promise<{daily: number; monthly: number; remaining: number}>;
 }
 
-export function useSmartEnhancement(): [EnhancementState, EnhancementActions] {
-  const [state, setState] = useState<EnhancementState>({
-    isEnhancing: false,
-    isSuggestingMilestones: false,
-    retryCount: 0,
-  });
+// New interface for form-specific enhancement hook
+interface SmartEnhancementParams {
+  title: string;
+  goal: string;
+  content: string;
+  send_date: string;
+  onApplyField: (field: string, value: string) => void;
+  onApplyMilestones?: (milestones: Array<{
+    title: string;
+    percentage: number;
+    target_date: string;
+    description: string;
+  }>) => void;
+}
+
+interface EnhancedLetter {
+  title: string;
+  goal: string;
+  content: string;
+}
+
+interface EnhancementData {
+  enhancedLetter: EnhancedLetter;
+  suggestedMilestones?: Array<{
+    title: string;
+    percentage: number;
+    target_date: string;
+    description: string;
+  }>;
+}
+
+// Legacy function signature for backward compatibility
+export function useSmartEnhancement(): [EnhancementState, EnhancementActions];
+
+// New function signature for form-specific enhancement
+export function useSmartEnhancement(params: SmartEnhancementParams): {
+  state: 'idle' | 'loading' | 'success' | 'error';
+  canEnhance: boolean;
+  enhance: () => void;
+  retry: () => void;
+  hasEnhancementData: boolean;
+  data?: EnhancementData;
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
+  appliedFields: Set<string>;
+  loadingFields: Set<string>;
+  applyField: (field: string) => void;
+  applyAllRemaining: () => void;
+  milestonesApplied: boolean;
+  isApplyingMilestones: boolean;
+  applyMilestones: () => void;
+};
+
+// Implementation for both signatures
+export function useSmartEnhancement(params?: SmartEnhancementParams) {
+  // If no params provided, use the legacy hook implementation
+  if (!params) {
+    const [state, setState] = useState<EnhancementState>({
+      isEnhancing: false,
+      isSuggestingMilestones: false,
+      retryCount: 0,
+    });
 
   const { toast } = useToast();
 
@@ -213,5 +271,182 @@ export function useSmartEnhancement(): [EnhancementState, EnhancementActions] {
     getUsageStats,
   }), [enhanceLetter, suggestMilestones, enhanceGoal, clearError, resetState, checkAvailability, getUsageStats]);
 
-  return [state, actions];
+    return [state, actions];
+  }
+  
+  // Form-specific implementation when params are provided
+  const { toast } = useToast();
+  const { title, goal, content, send_date, onApplyField, onApplyMilestones } = params;
+  
+  const [enhancementState, setEnhancementState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [enhancementData, setEnhancementData] = useState<EnhancementData | undefined>(undefined);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [appliedFields, setAppliedFields] = useState<Set<string>>(new Set());
+  const [loadingFields, setLoadingFields] = useState<Set<string>>(new Set());
+  const [milestonesApplied, setMilestonesApplied] = useState(false);
+  const [isApplyingMilestones, setIsApplyingMilestones] = useState(false);
+  const [canEnhance, setCanEnhance] = useState(true);
+  
+  // Check if enhancement is available
+  useEffect(() => {
+    const checkAvailability = async () => {
+      try {
+        const isAvailable = await enhancementService.isEnhancementAvailable();
+        console.log('Enhancement availability check result:', isAvailable);
+        setCanEnhance(isAvailable);
+      } catch (error) {
+        console.error('Failed to check enhancement availability:', error);
+        // Enable enhancement by default if status check fails
+        setCanEnhance(true);
+      }
+    };
+    
+    checkAvailability();
+  }, []);
+  
+  // Enhance the letter
+  const enhance = useCallback(async () => {
+    if (!title && !goal && !content) {
+      toast({
+        title: "Missing content",
+        description: "Please add some content to your letter before enhancing.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setEnhancementState('loading');
+    
+    try {
+      const request: EnhancementRequest = {
+        title,
+        goal,
+        content,
+        send_date,
+        includeMilestones: true,
+      };
+      
+      logApiCall('info', 'Starting letter enhancement via form hook', { request });
+      
+      const response = await enhancementService.enhanceLetter(request);
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Enhancement failed');
+      }
+      
+      // Convert the EdgeFunctionResponse to the expected EnhancementData format
+      const adaptedData: EnhancementData = {
+        enhancedLetter: {
+          title: response.data.enhancedLetter?.title || title,
+          goal: response.data.enhancedLetter?.goal || goal,
+          content: response.data.enhancedLetter?.content || content,
+        },
+        suggestedMilestones: response.data.suggestedMilestones,
+      };
+      
+      setEnhancementData(adaptedData);
+      setEnhancementState('success');
+      setIsExpanded(true);
+      
+      toast({
+        title: "Letter Enhanced",
+        description: "AI has provided suggestions to improve your letter.",
+      });
+      
+    } catch (error) {
+      setEnhancementState('error');
+      handleApiError(error, 'enhance-letter-form-hook', true);
+      
+      toast({
+        title: "Enhancement failed",
+        description: error instanceof Error ? error.message : "Failed to enhance letter",
+        variant: "destructive",
+      });
+    }
+  }, [title, goal, content, send_date, toast]);
+  
+  // Retry enhancement
+  const retry = useCallback(() => {
+    setEnhancementState('idle');
+    enhance();
+  }, [enhance]);
+  
+  // Apply a single field
+  const applyField = useCallback((field: string) => {
+    if (!enhancementData) return;
+    
+    setLoadingFields(prev => new Set(prev).add(field));
+    
+    setTimeout(() => {
+      let value = '';
+      
+      switch (field) {
+        case 'title':
+          value = enhancementData.enhancedLetter.title;
+          break;
+        case 'goal':
+          value = enhancementData.enhancedLetter.goal;
+          break;
+        case 'content':
+          value = enhancementData.enhancedLetter.content;
+          break;
+      }
+      
+      onApplyField(field, value);
+      
+      setAppliedFields(prev => new Set(prev).add(field));
+      setLoadingFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(field);
+        return newSet;
+      });
+    }, 500); // Simulate loading for a better UX
+  }, [enhancementData, onApplyField]);
+  
+  // Apply all remaining fields
+  const applyAllRemaining = useCallback(() => {
+    if (!enhancementData) return;
+    
+    ['title', 'goal', 'content'].forEach(field => {
+      if (!appliedFields.has(field)) {
+        applyField(field);
+      }
+    });
+    
+    if (enhancementData.suggestedMilestones && !milestonesApplied && onApplyMilestones) {
+      applyMilestones();
+    }
+  }, [enhancementData, appliedFields, milestonesApplied, applyField, onApplyMilestones]);
+  
+  // Apply suggested milestones
+  const applyMilestones = useCallback(() => {
+    if (!enhancementData?.suggestedMilestones || !onApplyMilestones) return;
+    
+    setIsApplyingMilestones(true);
+    
+    setTimeout(() => {
+      onApplyMilestones(enhancementData.suggestedMilestones || []);
+      setMilestonesApplied(true);
+      setIsApplyingMilestones(false);
+    }, 500); // Simulate loading for a better UX
+  }, [enhancementData, onApplyMilestones]);
+  
+  // Return the form-specific interface
+  return {
+    state: enhancementState,
+    canEnhance,
+    enhance,
+    retry,
+    hasEnhancementData: !!enhancementData,
+    data: enhancementData,
+    isExpanded,
+    setIsExpanded,
+    appliedFields,
+    loadingFields,
+    applyField,
+    applyAllRemaining,
+    milestonesApplied,
+    isApplyingMilestones,
+    applyMilestones,
+  };
 }

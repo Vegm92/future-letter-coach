@@ -46,6 +46,17 @@ const AuthenticatedLayout = () => {
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
     navigate('/letters');
+    // Trigger letters refresh with error handling
+    try {
+      setTimeout(() => {
+        const event = new CustomEvent("refreshLetters");
+        window.dispatchEvent(event);
+      }, 100);
+    } catch (error) {
+      console.error('Failed to refresh letters:', error);
+      // Fallback: Could show a toast notification about manual refresh
+      // or implement a retry mechanism
+    }
   };
 
   const getPageTitle = () => {

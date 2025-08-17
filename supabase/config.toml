@@ -6,6 +6,9 @@ verify_jwt = true
 [functions.enhance-letter]
 verify_jwt = true
 
+[functions.enhancement-status]
+verify_jwt = false
+
 [functions.suggest-milestones]
 verify_jwt = true
 

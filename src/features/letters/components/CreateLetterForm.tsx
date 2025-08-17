@@ -38,6 +38,13 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     goal: "",
     send_date: format(addDays(new Date(), 30), "yyyy-MM-dd"),
   });
+  
+  // Store original values to preserve them when enhanced content is applied
+  const [originalValues, setOriginalValues] = useState<{
+    title: string;
+    content: string;
+    goal: string;
+  }>({ title: "", content: "", goal: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [milestones, setMilestones] = useState<CreateMilestone[]>([]);
   const [showMilestones, setShowMilestones] = useState(false);
@@ -60,6 +67,13 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
     content: formData.content,
     send_date: formData.send_date,
     onApplyField: (field, value) => {
+      // Store the original value before applying enhancement
+      if (!enhancement.appliedFields.has(field)) {
+        setOriginalValues((prev) => ({
+          ...prev,
+          [field]: formData[field as keyof typeof formData]
+        }));
+      }
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
     onApplyMilestones: (suggestedMilestones) => {
@@ -76,10 +90,21 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
   });
 
   const addMilestone = () => {
+    // Calculate target date relative to the letter's send date, not today
+    const sendDate = new Date(formData.send_date);
+    const targetDate = new Date(sendDate);
+    targetDate.setDate(sendDate.getDate() - 7); // Default to 7 days before send date
+    
+    // Ensure target date is not in the past
+    const today = new Date();
+    if (targetDate < today) {
+      targetDate.setTime(today.getTime());
+    }
+    
     const newMilestone: CreateMilestone = {
       title: "",
       percentage: 25,
-      target_date: format(addDays(new Date(), 7), "yyyy-MM-dd"),
+      target_date: format(targetDate, "yyyy-MM-dd"),
       description: "",
     };
     setMilestones([...milestones, newMilestone]);
@@ -119,29 +144,60 @@ const CreateLetterForm = ({ onClose, onSuccess }: CreateLetterFormProps) => {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error("Not authenticated");
 
+      // Debug enhancement state
+      console.log('🚀 Creating letter with enhancement state:', {
+        enhancementState: enhancement.state,
+        appliedFields: Array.from(enhancement.appliedFields),
+        formData: {
+          title: formData.title,
+          goal: formData.goal.substring(0, 50) + '...',
+          content: formData.content.substring(0, 50) + '...'
+        },
+        originalValues: {
+          title: originalValues.title,
+          goal: originalValues.goal.substring(0, 50) + '...',
+          content: originalValues.content.substring(0, 50) + '...'
+        }
+      });
+
+      const letterToSave = {
+        user_id: user.user.id,
+        // Always save the current form data as the "display" version (could be original or enhanced)
+        title: formData.title,
+        content: formData.content,
+        goal: formData.goal,
+        send_date: formData.send_date,
+        status: "scheduled",
+        ai_enhanced: enhancement.state === "success" && !!enhancement.data,
+        // If enhancement was successful and we have enhanced data, save it separately
+        ai_enhanced_title:
+          enhancement.state === "success" && enhancement.data?.enhancedLetter?.title
+            ? enhancement.data.enhancedLetter.title
+            : null,
+        ai_enhanced_goal:
+          enhancement.state === "success" && enhancement.data?.enhancedLetter?.goal
+            ? enhancement.data.enhancedLetter.goal
+            : null,
+        ai_enhanced_content:
+          enhancement.state === "success" && enhancement.data?.enhancedLetter?.content
+            ? enhancement.data.enhancedLetter.content
+            : null,
+        voice_memo_url: isRecording ? "placeholder-url" : null,
+      };
+
+      console.log('📝 Letter data to save:', {
+        title: letterToSave.title,
+        goal: letterToSave.goal.substring(0, 50) + '...',
+        content: letterToSave.content.substring(0, 50) + '...',
+        ai_enhanced: letterToSave.ai_enhanced,
+        ai_enhanced_goal: letterToSave.ai_enhanced_goal ? letterToSave.ai_enhanced_goal.substring(0, 50) + '...' : letterToSave.ai_enhanced_goal,
+        ai_enhanced_content: letterToSave.ai_enhanced_content ? letterToSave.ai_enhanced_content.substring(0, 50) + '...' : letterToSave.ai_enhanced_content
+      });
+
       // Create the letter first
       const { data: letterData, error: letterError } = await supabase
         .from("letters")
-        .insert({
-          user_id: user.user.id,
-          title: formData.title,
-          content: formData.content,
-          goal: formData.goal,
-          send_date: formData.send_date,
-          status: "scheduled",
-          ai_enhanced: enhancement.state === "success",
-          ai_enhanced_goal:
-            enhancement.state === "success" &&
-            enhancement.appliedFields.has("goal")
-              ? formData.goal
-              : null,
-          ai_enhanced_content:
-            enhancement.state === "success" &&
-            enhancement.appliedFields.has("content")
-              ? formData.content
-              : null,
-          voice_memo_url: isRecording ? "placeholder-url" : null,
-        })
+        .insert(letterToSave)
         .select()
         .single();
 

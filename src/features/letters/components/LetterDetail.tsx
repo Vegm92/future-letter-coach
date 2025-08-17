@@ -51,6 +51,7 @@ const LetterDetail = ({
     letter.personal_comments || ""
   );
   const [isSavingComments, setIsSavingComments] = useState(false);
+  const [showOriginalTitle, setShowOriginalTitle] = useState(false);
   const [showOriginalGoal, setShowOriginalGoal] = useState(false);
   const [showOriginalContent, setShowOriginalContent] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -96,6 +97,15 @@ const LetterDetail = ({
       default:
         return status;
     }
+  };
+
+  const isValidEnhancedTitle = (enhancedTitle?: string) => {
+    return (
+      enhancedTitle &&
+      enhancedTitle !== "true" &&
+      enhancedTitle.trim().length > 0 &&
+      enhancedTitle !== letter.title
+    );
   };
 
   const isValidEnhancedGoal = (enhancedGoal?: string) => {
@@ -151,9 +161,32 @@ const LetterDetail = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto animate-scale-in">
         <DialogHeader>
           <div className="flex items-start justify-between">
-            <DialogTitle className="text-2xl font-bold leading-tight pr-4">
-              {letter.title}
-            </DialogTitle>
+            <div className="flex-1 pr-4">
+              <div className="flex items-center justify-between mb-2">
+                <DialogTitle className="text-2xl font-bold leading-tight">
+                  {isValidEnhancedTitle(letter.ai_enhanced_title) ? (
+                    showOriginalTitle ? letter.title : letter.ai_enhanced_title
+                  ) : (
+                    letter.title
+                  )}
+                </DialogTitle>
+                {isValidEnhancedTitle(letter.ai_enhanced_title) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowOriginalTitle(!showOriginalTitle)}
+                    className="text-xs ml-2"
+                  >
+                    Show {showOriginalTitle ? "Enhanced" : "Original"}
+                  </Button>
+                )}
+              </div>
+              {isValidEnhancedTitle(letter.ai_enhanced_title) && (
+                <p className="text-xs text-muted-foreground">
+                  {showOriginalTitle ? "Original Title" : "Enhanced Title"}
+                </p>
+              )}
+            </div>
             <div className="flex items-center space-x-2 shrink-0">
               <Badge variant={getStatusColor(letter.status) as 'secondary' | 'default' | 'success' | 'outline'}>
                 {getStatusLabel(letter.status)}

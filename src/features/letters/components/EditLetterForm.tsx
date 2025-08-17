@@ -11,6 +11,7 @@ import { supabase } from "@/shared/config/client";
 import { useToast } from "@/shared/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { useSmartEnhancement } from "@/features/enhancement/hooks/useSmartEnhancement";
+import { useLetters } from "../hooks/useLetters";
 
 // Sub-components
 import { EnhancementSection } from "./EditLetterForm/EnhancementSection";
@@ -36,10 +37,24 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     sendDate: format(parseISO(letter.send_date), 'yyyy-MM-dd')
   });
   
+  // Store original values to preserve them when enhanced content is applied
+  const [originalValues, setOriginalValues] = useState<{
+    title: string;
+    content: string;
+    goal: string;
+  }>({ 
+    title: letter.title,
+    content: letter.content, 
+    goal: letter.goal 
+  });
+  
   // Separate UI states
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  
+  // Use letters hook for state management
+  const [, { updateLetter }] = useLetters();
 
   // Sync form data when letter prop changes
   useEffect(() => {
@@ -64,6 +79,13 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     content: formData.content,
     send_date: formData.sendDate,
     onApplyField: (field, value) => {
+      // Store the original value before applying enhancement
+      if (!enhancement.appliedFields.has(field)) {
+        setOriginalValues((prev) => ({
+          ...prev,
+          [field]: formData[field as keyof FormData]
+        }));
+      }
       updateFormData(field as keyof FormData, value);
     }
   });
@@ -83,30 +105,25 @@ const EditLetterForm = ({ letter, onClose, onSuccess }: EditLetterFormProps) => 
     setIsSubmitting(true);
     try {
       const updateData = {
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        goal: formData.goal.trim(),
+        title: enhancement.appliedFields.has('title') ? originalValues.title : formData.title.trim(),
+        content: enhancement.appliedFields.has('content') ? originalValues.content : formData.content.trim(),
+        goal: enhancement.appliedFields.has('goal') ? originalValues.goal : formData.goal.trim(),
         send_date: formData.sendDate,
         ai_enhanced: letter.ai_enhanced || enhancement.state === 'success',
-        ...(enhancement.state === 'success' && enhancement.appliedFields.has('goal') && { ai_enhanced_goal: formData.goal }),
-        ...(enhancement.state === 'success' && enhancement.appliedFields.has('content') && { ai_enhanced_content: formData.content }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('goal') && { ai_enhanced_goal: formData.goal.trim() }),
+        ...(enhancement.state === 'success' && enhancement.appliedFields.has('content') && { ai_enhanced_content: formData.content.trim() }),
       };
 
-      const { data, error } = await supabase
-        .from('letters')
-        .update(updateData)
-        .eq('id', letter.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Letter updated!",
-        description: "Your letter has been successfully updated.",
-      });
-
-      onSuccess(data as Letter);
+      // Use the letters hook instead of direct Supabase calls
+      const updatedLetter = await updateLetter(letter.id, updateData);
+      
+      if (updatedLetter) {
+        toast({
+          title: "Letter updated!",
+          description: "Your letter has been successfully updated.",
+        });
+        onSuccess(updatedLetter);
+      }
     } catch (error) {
       toast({
         title: "Update failed",

@@ -205,7 +205,25 @@ export function useLetters(): [UseLettersState, UseLettersActions] {
   const triggerDelivery = useCallback(async (letter: Letter): Promise<void> => {
     try {
       setState(prev => ({ ...prev, error: null }));
-      const action = letter.status === 'draft' ? 'schedule' : 'send';
+      
+      // Determine action based on current date vs send date
+      const today = new Date();
+      const sendDate = new Date(letter.send_date);
+      const isScheduledDate = today >= sendDate;
+      
+      // Only allow immediate sending if today is on or after the scheduled date
+      let action: 'schedule' | 'send';
+      
+      if (letter.status === 'draft') {
+        action = 'schedule'; // Always schedule drafts
+      } else if (letter.status === 'scheduled' && isScheduledDate) {
+        action = 'send'; // Send if it's the scheduled date
+      } else if (letter.status === 'scheduled' && !isScheduledDate) {
+        // Don't send if it's not the scheduled date yet
+        throw new Error(`This letter is scheduled for ${letter.send_date}. Cannot send before the scheduled date.`);
+      } else {
+        action = 'send'; // For any other status, assume it's ready to send
+      }
 
       const { data, error } = await supabase.functions.invoke(
         'trigger-letter-delivery',

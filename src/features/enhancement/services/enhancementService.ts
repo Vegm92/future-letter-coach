@@ -16,6 +16,22 @@ export interface EnhancementRequest {
   includeMilestones?: boolean;
 }
 
+// Response interface matching what the Edge Function actually returns
+export interface EdgeFunctionResponse {
+  enhancedLetter: {
+    title: string;
+    goal: string;
+    content: string;
+  };
+  suggestedMilestones?: Array<{
+    title: string;
+    percentage: number;
+    target_date: string;
+    description: string;
+  }>;
+}
+
+// Legacy interface for backward compatibility
 export interface EnhancementResponse {
   enhancedContent: string;
   enhancedGoal?: string;
@@ -44,7 +60,7 @@ class EnhancementService {
     backoffMultiplier: 2,
   };
 
-  async enhanceLetter(request: EnhancementRequest): Promise<ApiResponse<EnhancementResponse>> {
+  async enhanceLetter(request: EnhancementRequest): Promise<ApiResponse<EdgeFunctionResponse>> {
     try {
       logApiCall('info', 'Starting letter enhancement', { request });
 
@@ -58,7 +74,9 @@ class EnhancementService {
             throw new Error(error.message || 'Enhancement failed');
           }
 
-          return data;
+          // The Edge Function returns { success: true, data: actualData }
+          // We need to extract the actual data
+          return data?.data || data;
         },
         this.retryConfig,
         'enhance-letter'
@@ -67,15 +85,18 @@ class EnhancementService {
       logApiCall('info', 'Letter enhancement completed successfully', { 
         request, 
         response: { 
-          hasEnhancedContent: !!response.enhancedContent,
-          hasMilestones: !!response.milestones?.length,
-          confidence: response.confidence 
+          hasEnhancedLetter: !!response.enhancedLetter,
+          hasMilestones: !!response.suggestedMilestones?.length,
+          title: response.enhancedLetter?.title,
+          goal: response.enhancedLetter?.goal,
+          content: response.enhancedLetter?.content,
+          fullResponse: response // Log the full response for debugging
         } 
       });
 
       return {
         success: true,
-        data: response as EnhancementResponse,
+        data: response as EdgeFunctionResponse,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -202,11 +223,21 @@ class EnhancementService {
   // Helper method to check if enhancement is available
   async isEnhancementAvailable(): Promise<boolean> {
     try {
-      const { data } = await supabase.functions.invoke('enhancement-status');
-      return data?.available || false;
+      const { data, error } = await supabase.functions.invoke('enhancement-status');
+      
+      if (error) {
+        logApiCall('warn', 'Enhancement status check failed', { error });
+        return true; // Default to available if check fails
+      }
+      
+      // The function returns { success: true, data: { available: boolean, ... } }
+      const result = data?.data?.available ?? data?.available ?? true;
+      logApiCall('info', 'Enhancement status check result', { result, rawData: data });
+      
+      return result;
     } catch (error) {
       logApiCall('warn', 'Could not check enhancement availability', { error });
-      return false;
+      return true; // Default to available if check fails
     }
   }
 

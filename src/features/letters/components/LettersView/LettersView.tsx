@@ -11,13 +11,15 @@ interface LettersViewProps {
   autoViewLetter?: Letter | null;
   onEditLetter?: (letter: Letter) => void;
   onViewLetter?: (letter: Letter) => void;
+  refreshTrigger?: number;
 }
 
 const LettersView = ({ 
   onCreateClick, 
   autoViewLetter,
   onEditLetter,
-  onViewLetter 
+  onViewLetter,
+  refreshTrigger
 }: LettersViewProps) => {
   const [{ letters, loading, error }, {
     fetchLetters,
@@ -26,7 +28,7 @@ const LettersView = ({
     triggerDelivery
   }] = useLetters();
 
-  // Fetch letters on component mount
+  // Fetch letters on component mount and when refreshTrigger changes
   useEffect(() => {
     const loadLetters = async () => {
       try {
@@ -40,7 +42,7 @@ const LettersView = ({
     };
 
     loadLetters();
-  }, [fetchLetters]);
+  }, [fetchLetters, refreshTrigger]);
 
   // Auto-open letter when coming from Dashboard
   useEffect(() => {
