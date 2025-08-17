@@ -22,8 +22,10 @@ import { supabase } from '../lib/supabase';
 import { useToast } from '../shared/hooks/use-toast';
 import type { Letter, CreateLetterData } from '../lib/types';
 
-// We'll import the existing LetterCard component for now
-import LetterCard from '../features/letters/components/LetterCard/LetterCard';
+// Import our new simplified components
+import { LetterCard } from '../components/LetterCard';
+import { LetterForm } from '../components/LetterForm';
+import { LetterDetail } from '../components/LetterDetail';
 
 export function LettersPage() {
   const { toast } = useToast();
@@ -32,6 +34,7 @@ export function LettersPage() {
   
   // Modal state - simple and clear
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingLetter, setEditingLetter] = useState<Letter | null>(null);
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [showLetterDetail, setShowLetterDetail] = useState(false);
   
@@ -63,27 +66,54 @@ export function LettersPage() {
 
   // Event handlers - simple and direct
   const handleCreateClick = () => {
+    setEditingLetter(null); // Clear any editing state
     setShowCreateForm(true);
   };
 
-  const handleLetterClick = (letter: Letter) => {
+  const handleViewLetter = (letter: Letter) => {
     setSelectedLetter(letter);
     setShowLetterDetail(true);
+  };
+
+  const handleEditLetter = (letter: Letter) => {
+    setEditingLetter(letter);
+    setShowCreateForm(true); // Use same form for create/edit
+    setShowLetterDetail(false); // Close detail if open
   };
 
   const handleDeleteLetter = async (letter: Letter) => {
     if (!confirm(`Are you sure you want to delete "${letter.title}"?`)) return;
     await deleteLetter(letter.id);
+    // Close detail modal if this letter was open
+    if (selectedLetter?.id === letter.id) {
+      setShowLetterDetail(false);
+      setSelectedLetter(null);
+    }
   };
 
   const handleStatusChange = async (letter: Letter, newStatus: Letter['status']) => {
     await updateLetter(letter.id, { status: newStatus });
+    // Update selected letter if it's the same one
+    if (selectedLetter?.id === letter.id) {
+      setSelectedLetter({ ...selectedLetter, status: newStatus });
+    }
   };
 
-  const handleCreateLetter = async (data: CreateLetterData) => {
-    const newLetter = await createLetter(data);
+  const handleFormSuccess = (letter: Letter) => {
     setShowCreateForm(false);
-    return newLetter;
+    setEditingLetter(null);
+    // If we were editing, update the selected letter for detail view
+    if (selectedLetter?.id === letter.id) {
+      setSelectedLetter(letter);
+    }
+  };
+
+  const handleUpdateComments = async (letter: Letter, comments: string) => {
+    await updateLetter(letter.id, { personal_comments: comments });
+    // Update the selected letter
+    if (selectedLetter?.id === letter.id) {
+      setSelectedLetter({ ...selectedLetter, personal_comments: comments });
+    }
   };
 
   return (
@@ -131,11 +161,9 @@ export function LettersPage() {
               <LetterCard
                 key={letter.id}
                 letter={letter}
-                onView={handleLetterClick}
-                onEdit={handleLetterClick}
+                onView={handleViewLetter}
+                onEdit={handleEditLetter}
                 onDelete={handleDeleteLetter}
-                onPlay={(url) => console.log('Playing voice memo:', url)}
-                onTriggerDelivery={(letter) => handleStatusChange(letter, 'sent')}
                 onStatusChange={handleStatusChange}
               />
             ))}
@@ -143,37 +171,36 @@ export function LettersPage() {
         )}
       </div>
 
-      {/* Create Letter Modal - we'll implement this next */}
-      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Letter</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 text-center text-muted-foreground">
-            <p>Letter creation form will be implemented next...</p>
-            <Button onClick={() => setShowCreateForm(false)} className="mt-4">
-              Close
-            </Button>
-          </div>
+      {/* Letter Form Modal (Create/Edit) */}
+      <Dialog open={showCreateForm} onOpenChange={() => {
+        setShowCreateForm(false);
+        setEditingLetter(null);
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <LetterForm
+            letter={editingLetter || undefined}
+            onClose={() => {
+              setShowCreateForm(false);
+              setEditingLetter(null);
+            }}
+            onSuccess={handleFormSuccess}
+          />
         </DialogContent>
       </Dialog>
 
-      {/* Letter Detail Modal - we'll implement this next */}
-      <Dialog open={showLetterDetail} onOpenChange={setShowLetterDetail}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedLetter?.title || 'Letter Details'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4 text-center text-muted-foreground">
-            <p>Letter detail view will be implemented next...</p>
-            <Button onClick={() => setShowLetterDetail(false)} className="mt-4">
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Letter Detail Modal */}
+      {selectedLetter && (
+        <Dialog open={showLetterDetail} onOpenChange={setShowLetterDetail}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <LetterDetail
+              letter={selectedLetter}
+              onEdit={handleEditLetter}
+              onDelete={handleDeleteLetter}
+              onUpdateComments={handleUpdateComments}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
