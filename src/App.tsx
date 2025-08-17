@@ -6,7 +6,7 @@
  * Clean, simple React patterns.
  */
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,6 +18,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { LettersPage } from './pages/LettersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { EmailPreviewPage } from './pages/EmailPreviewPage';
+import { Layout } from './components/Layout';
 
 // Simple, predictable query client setup
 const queryClient = new QueryClient({
@@ -29,23 +31,33 @@ const queryClient = new QueryClient({
   },
 });
 
+function AppRoutes() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/';
+
+  if (isAuthPage) {
+    return <AuthPage />;
+  }
+
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/letters" element={<LettersPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/dev/email-preview" element={<EmailPreviewPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Layout>
+  );
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<AuthPage />} />
-            
-            {/* Protected routes - each page handles its own auth */}
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/letters" element={<LettersPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            
-            {/* Catch all */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
         
         {/* Global UI components */}

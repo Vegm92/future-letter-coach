@@ -5,8 +5,7 @@
  * Uses direct hooks, no complex prop passing or event bus.
  */
 
-import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -19,41 +18,15 @@ import {
   CheckCircle,
   Plus,
   ArrowRight,
-  Loader2,
 } from 'lucide-react';
 
 import { useLetters } from '../hooks/useLetters';
-import { supabase } from '../lib/supabase';
 import type { Letter } from '../lib/types';
 import { LetterCard } from '../components/LetterCard';
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const { letters, isLoading: lettersLoading } = useLetters();
-
-  // Check authentication
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-    checkUser();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
 
   // Calculate stats from letters
   const stats = {
@@ -91,7 +64,7 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       {/* Header */}
       <div className="border-b">
         <div className="container mx-auto px-4 py-6">
@@ -237,6 +210,6 @@ export function DashboardPage() {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }

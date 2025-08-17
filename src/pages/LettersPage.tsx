@@ -10,15 +10,13 @@
  * One page, clear responsibilities, no prop drilling.
  */
 
-import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Target, Loader2 } from 'lucide-react';
+import { Plus, Target } from 'lucide-react';
 
 import { useLetters } from '../hooks/useLetters';
 import { useEnhancement } from '../hooks/useEnhancement';
-import { supabase } from '../lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import type { Letter, CreateLetterData } from '../lib/types';
 
@@ -29,8 +27,6 @@ import { LetterDetail } from '../components/LetterDetail';
 
 export function LettersPage() {
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   
   // Modal state - simple and clear
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -41,28 +37,6 @@ export function LettersPage() {
   // Data hooks
   const { letters, isLoading: lettersLoading, createLetter, updateLetter, deleteLetter } = useLetters();
   const { enhance, isLoading: enhanceLoading } = useEnhancement();
-
-  // Check authentication
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-    checkUser();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
 
   // Event handlers - simple and direct
   const handleCreateClick = () => {
@@ -117,7 +91,7 @@ export function LettersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       {/* Simple header */}
       <div className="border-b">
         <div className="container mx-auto px-4 py-6">
@@ -201,7 +175,7 @@ export function LettersPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </>
   );
 }
 
