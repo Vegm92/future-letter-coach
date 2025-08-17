@@ -38,8 +38,14 @@ export interface Database {
   };
 }
 
-// Create typed client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create typed client with auth configuration
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
 // Helper functions for common operations
 export const getCurrentUser = async () => {
