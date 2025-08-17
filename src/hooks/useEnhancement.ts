@@ -7,7 +7,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../shared/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { EnhancementRequest, EnhancementResponse, UseEnhancementReturn } from '../lib/types';
 
 export function useEnhancement(): UseEnhancementReturn {

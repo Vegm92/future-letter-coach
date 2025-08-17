@@ -2,8 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Mail, Target, Sparkles, Clock, Users } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
-import { HeroSectionProps } from "@/shared/types";
+// import heroImage from "@/assets/hero-image.jpg";
+
+interface HeroSectionProps {
+  onGetStarted: () => void;
+}
 
 const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   return (
@@ -63,12 +66,11 @@ const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
             </div>
 
             <div className="relative">
-              <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-                <img
-                  src={heroImage}
-                  alt="Person writing a future letter"
-                  className="w-full h-auto object-cover"
-                />
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl bg-gradient-to-br from-primary/10 to-accent/10 min-h-[400px] flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <Mail className="h-16 w-16 text-primary/60 mx-auto" />
+                  <p className="text-lg font-medium text-muted-foreground">Future Letter Preview</p>
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent"></div>
               </div>
               

@@ -8,7 +8,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, getCurrentUser } from '../lib/supabase';
-import { useToast } from '../shared/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { Letter, CreateLetterData, UpdateLetterData, UseLettersReturn } from '../lib/types';
 
 const LETTERS_QUERY_KEY = 'letters';

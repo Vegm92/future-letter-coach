@@ -19,7 +19,7 @@ import { Plus, Target, Loader2 } from 'lucide-react';
 import { useLetters } from '../hooks/useLetters';
 import { useEnhancement } from '../hooks/useEnhancement';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../shared/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import type { Letter, CreateLetterData } from '../lib/types';
 
 // Import our new simplified components
