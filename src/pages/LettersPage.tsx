@@ -17,6 +17,7 @@ import { Plus, Target } from 'lucide-react';
 
 import { useLetters } from '../hooks/useLetters';
 import { useEnhancement } from '../hooks/useEnhancement';
+import { useLetterDelivery } from '../hooks/useLetterDelivery';
 import { useToast } from '@/components/ui/use-toast';
 import type { Letter, CreateLetterData } from '../lib/types';
 
@@ -37,6 +38,7 @@ export function LettersPage() {
   // Data hooks
   const { letters, isLoading: lettersLoading, createLetter, updateLetter, deleteLetter } = useLetters();
   const { enhance, isLoading: enhanceLoading } = useEnhancement();
+  const { triggerDelivery, isDelivering } = useLetterDelivery();
 
   // Event handlers - simple and direct
   const handleCreateClick = () => {
@@ -66,10 +68,22 @@ export function LettersPage() {
   };
 
   const handleStatusChange = async (letter: Letter, newStatus: Letter['status']) => {
-    await updateLetter(letter.id, { status: newStatus });
-    // Update selected letter if it's the same one
-    if (selectedLetter?.id === letter.id) {
-      setSelectedLetter({ ...selectedLetter, status: newStatus });
+    try {
+      // If changing to 'sent', trigger actual email delivery
+      if (newStatus === 'sent') {
+        await triggerDelivery({ letterId: letter.id, action: 'send' });
+      } else {
+        // For other status changes, just update the database
+        await updateLetter(letter.id, { status: newStatus });
+      }
+      
+      // Update selected letter if it's the same one
+      if (selectedLetter?.id === letter.id) {
+        setSelectedLetter({ ...selectedLetter, status: newStatus });
+      }
+    } catch (error) {
+      console.error('Status change failed:', error);
+      // The error toast is already handled by the hook
     }
   };
 
