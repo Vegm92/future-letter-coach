@@ -1,156 +1,125 @@
-/**
- * UNIFIED LETTER FORM
- * 
- * Replaces both CreateLetterForm and EditLetterForm.
- * One component, clear logic, no duplication.
- */
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { format, addDays } from 'date-fns';
 
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Save, Plus, Loader2 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
 
 import { useLetters } from '../hooks/useLetters';
 import { useMilestones } from '../hooks/useMilestones';
-import type { Letter, CreateLetterData, UpdateLetterData } from '../lib/types';
+import type { Letter, CreateLetterData, UpdateLetterData, LetterFormProps } from '../lib/types';
 import { FieldEnhancer } from './FieldEnhancer';
 import { MilestoneManager } from './MilestoneManager';
 
-interface LetterFormProps {
-  letter?: Letter; // undefined = create mode, defined = edit mode
-  onClose: () => void;
-  onSuccess: (letter: Letter) => void;
-}
+const letterFormSchema = z.object({
+  title: z
+    .string()
+    .min(1, 'Title is required')
+    .max(100, 'Title must be less than 100 characters'),
+  content: z
+    .string()
+    .min(10, 'Content must be at least 10 characters')
+    .max(5000, 'Content must be less than 5000 characters'),
+  goal: z
+    .string()
+    .min(5, 'Goal must be at least 5 characters')
+    .max(500, 'Goal must be less than 500 characters'),
+  send_date: z
+    .string()
+    .refine(
+      (date) => new Date(date) > new Date(),
+      'Send date must be in the future'
+    ),
+  personal_comments: z.string().max(1000).optional().default(''),
+});
+
+type LetterFormValues = z.infer<typeof letterFormSchema>;
 
 export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
   const isEditMode = !!letter;
   const { createLetter, updateLetter } = useLetters();
   const { createMilestones, updateMilestones } = useMilestones();
+  
+  const [milestones, setMilestones] = useState(letter?.milestones || []);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    title: letter?.title || '',
-    content: letter?.content || '',
-    goal: letter?.goal || '',
-    send_date: letter?.send_date || format(addDays(new Date(), 30), 'yyyy-MM-dd'),
-    personal_comments: letter?.personal_comments || '',
+  const form = useForm<LetterFormValues>({
+    resolver: zodResolver(letterFormSchema),
+    defaultValues: {
+      title: letter?.title || '',
+      content: letter?.content || '',
+      goal: letter?.goal || '',
+      send_date: letter?.send_date || format(addDays(new Date(), 30), 'yyyy-MM-dd'),
+      personal_comments: letter?.personal_comments || '',
+    },
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [milestones, setMilestones] = useState<any[]>([]);
+  const formValues = form.watch();
+  const isSubmitting = form.formState.isSubmitting;
 
-  // Update form when letter prop changes (for edit mode)
   useEffect(() => {
     if (letter) {
-      setFormData({
+      form.reset({
         title: letter.title,
         content: letter.content,
         goal: letter.goal,
         send_date: letter.send_date,
         personal_comments: letter.personal_comments || '',
       });
-      // Load existing milestones if in edit mode
-      if (letter.milestones) {
-        const existingMilestones = letter.milestones.map(m => ({
-          id: m.id,
-          text: m.title,
-          dueDate: m.target_date,
-          isInferred: false, // We don't track this in the database yet
-          reasoning: m.description || '',
-        }));
-        setMilestones(existingMilestones);
-      }
     }
-  }, [letter]);
+  }, [letter, form]);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleFieldEnhancement = (field: keyof LetterFormValues, enhancedValue: string) => {
+    form.setValue(field, enhancedValue, { 
+      shouldValidate: true,
+      shouldDirty: true 
+    });
   };
-
-  const handleFieldEnhancement = (field: keyof typeof formData, enhancedValue: string) => {
-    setFormData(prev => ({ ...prev, [field]: enhancedValue }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.title.trim() || !formData.content.trim() || !formData.goal.trim()) {
-      return;
-    }
-
-    setIsSubmitting(true);
+  const onSubmit = async (data: LetterFormValues) => {
     try {
       let result: Letter;
 
       if (isEditMode && letter) {
-        // Update existing letter
         const updateData: UpdateLetterData = {
-          title: formData.title,
-          content: formData.content,
-          goal: formData.goal,
-          send_date: formData.send_date,
-          personal_comments: formData.personal_comments,
+          title: data.title,
+          content: data.content,
+          goal: data.goal,
+          send_date: data.send_date,
+          personal_comments: data.personal_comments,
         };
-        
         result = await updateLetter(letter.id, updateData);
-        
-        // Update milestones for existing letter
-        if (milestones.length > 0) {
-          const milestoneData = milestones.map(m => ({
-            letterId: result.id,
-            title: m.text,
-            description: m.reasoning || '',
-            percentage: 0, // Default percentage
-            target_date: m.dueDate,
-          }));
-          await updateMilestones(result.id, milestoneData);
-        } else {
-          // If no milestones, clear existing ones
-          await updateMilestones(result.id, []);
-        }
       } else {
-        // Create new letter
         const createData: CreateLetterData = {
-          title: formData.title,
-          content: formData.content,
-          goal: formData.goal,
-          send_date: formData.send_date,
+          title: data.title,
+          content: data.content,
+          goal: data.goal,
+          send_date: data.send_date,
         };
-        
         result = await createLetter(createData);
-        
-        // Create milestones for new letter
-        if (milestones.length > 0) {
-          const milestoneData = milestones.map(m => ({
-            letterId: result.id,
-            title: m.text,
-            description: m.reasoning || '',
-            percentage: 0, // Default percentage
-            target_date: m.dueDate,
-          }));
-          await createMilestones(milestoneData);
-        }
       }
 
       onSuccess(result);
     } catch (error) {
-      // Errors are already handled by the hooks
-    } finally {
-      setIsSubmitting(false);
+      console.error('Form submission error:', error);
     }
   };
 
-  const canSubmit = formData.title.trim() && formData.content.trim() && formData.goal.trim();
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
+      <div data-section="header">
         <h2 className="text-xl font-semibold">
           {isEditMode ? `Edit "${letter.title}"` : 'Create New Letter'}
         </h2>
@@ -162,144 +131,191 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Letter Title *</Label>
-          <Input
-            id="title"
-            placeholder="e.g., My Fitness Journey"
-            value={formData.title}
-            onChange={(e) => handleInputChange('title', e.target.value)}
-          />
-          <FieldEnhancer
-            field="title"
-            value={formData.title}
-            onApply={(enhanced) => handleFieldEnhancement('title', enhanced)}
-            context={{
-              goal: formData.goal,
-              content: formData.content,
-            }}
-          />
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div data-section="basic-fields" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Letter Title *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., My Fitness Journey" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <FieldEnhancer
+                    field="title"
+                    value={field.value}
+                    onApply={(enhanced) => handleFieldEnhancement('title', enhanced)}
+                    context={{
+                      goal: formValues.goal,
+                      content: formValues.content,
+                    }}
+                  />
+                </FormItem>
+              )}
+            />
 
-          <div className="space-y-2">
-            <Label htmlFor="send_date">Send Date *</Label>
-            <Input
-              id="send_date"
-              type="date"
-              value={formData.send_date}
-              onChange={(e) => handleInputChange('send_date', e.target.value)}
-              min={format(addDays(new Date(), 1), 'yyyy-MM-dd')}
+            <FormField
+              control={form.control}
+              name="send_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Send Date *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      min={format(addDays(new Date(), 1), 'yyyy-MM-dd')}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    When should this letter be delivered?
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="goal">Your Goal *</Label>
-          <Textarea
-            id="goal"
-            placeholder="Describe what you want to achieve..."
-            value={formData.goal}
-            onChange={(e) => handleInputChange('goal', e.target.value)}
-            className="min-h-[80px]"
-          />
-          <FieldEnhancer
-            field="goal"
-            value={formData.goal}
-            onApply={(enhanced) => handleFieldEnhancement('goal', enhanced)}
-            context={{
-              title: formData.title,
-              content: formData.content,
-            }}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="content">Letter Content *</Label>
-          <Textarea
-            id="content"
-            placeholder="Dear Future Me,&#10;&#10;I'm writing this letter to you with excitement about what we're going to achieve..."
-            value={formData.content}
-            onChange={(e) => handleInputChange('content', e.target.value)}
-            className="min-h-[120px]"
-          />
-          <FieldEnhancer
-            field="content"
-            value={formData.content}
-            onApply={(enhanced) => handleFieldEnhancement('content', enhanced)}
-            context={{
-              title: formData.title,
-              goal: formData.goal,
-            }}
-          />
-        </div>
-
-        {/* Smart Milestones Section */}
-        <MilestoneManager
-          goal={formData.goal}
-          content={formData.content}
-          title={formData.title}
-          initialMilestones={milestones}
-          onChange={setMilestones}
-        />
-
-        {isEditMode && (
-          <div className="space-y-2">
-            <Label htmlFor="comments">Personal Comments</Label>
-            <Textarea
-              id="comments"
-              placeholder="Add your reflections, updates, or notes..."
-              value={formData.personal_comments}
-              onChange={(e) => handleInputChange('personal_comments', e.target.value)}
-              className="min-h-[80px]"
-            />
-          </div>
-        )}
-
-
-        {/* Form Actions */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          
-          <Button type="submit" disabled={!canSubmit || isSubmitting}>
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {isEditMode ? 'Saving...' : 'Creating...'}
-              </>
-            ) : (
-              <>
-                {isEditMode ? (
-                  <Save className="h-4 w-4 mr-2" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )}
-                {isEditMode ? 'Save Changes' : 'Create Letter'}
-              </>
+          <div data-section="goal-field">
+            <FormField
+              control={form.control}
+              name="goal"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Your Goal *</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe what you want to achieve..."
+                    className="min-h-[80px] resize-y"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  What do you hope to accomplish by the time you receive this letter?
+                </FormDescription>
+                <FormMessage />
+                <FieldEnhancer
+                  field="goal"
+                  value={field.value}
+                  onApply={(enhanced) => handleFieldEnhancement('goal', enhanced)}
+                  context={{
+                    title: formValues.title,
+                    content: formValues.content,
+                  }}
+                />
+              </FormItem>
             )}
-          </Button>
-        </div>
-      </form>
+          />
+          </div>
+
+          <div data-section="content-field">
+            <FormField
+              control={form.control}
+              name="content"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Letter Content *</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Dear Future Me,&#10;&#10;I'm writing this letter to you with excitement about what we're going to achieve..."
+                    className="min-h-[150px] resize-y"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Write your message to your future self. Be specific about your hopes, dreams, and current situation.
+                </FormDescription>
+                <FormMessage />
+                <FieldEnhancer
+                  field="content"
+                  value={field.value}
+                  onApply={(enhanced) => handleFieldEnhancement('content', enhanced)}
+                  context={{
+                    title: formValues.title,
+                    goal: formValues.goal,
+                  }}
+                />
+              </FormItem>
+            )}
+          />
+          </div>
+
+          <div data-section="milestones" className="border-t pt-6">
+            <MilestoneManager
+              goal={formValues.goal}
+              content={formValues.content}
+              title={formValues.title}
+              initialMilestones={milestones}
+              onChange={setMilestones}
+            />
+          </div>
+
+          <div data-section="personal-comments">
+            {isEditMode && (
+              <FormField
+              control={form.control}
+              name="personal_comments"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Personal Comments</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Add your reflections, updates, or notes..."
+                      className="min-h-[80px] resize-y"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Optional reflections or updates since creating this letter.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            )}
+          </div>
+
+          <div data-section="form-actions" className="flex items-center justify-between pt-6 border-t">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !form.formState.isValid}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {isEditMode ? 'Saving...' : 'Creating...'}
+                </>
+              ) : (
+                <>
+                  {isEditMode ? (
+                    <Save className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  {isEditMode ? 'Save Changes' : 'Create Letter'}
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }
 
-/**
- * COMPARISON TO OLD FORMS:
- * 
- * OLD: CreateLetterForm (300+ lines) + EditLetterForm (250+ lines) = 550+ lines
- * NEW: Single LetterForm (250 lines) with unified logic
- * 
- * OLD: Duplicate enhancement logic, prop handling, validation
- * NEW: Shared logic, cleaner state management
- * 
- * OLD: Complex hook overloading and backward compatibility
- * NEW: Simple, direct hook usage
- * 
- * OLD: Separate milestone management inline
- * NEW: Will be handled separately (cleaner separation)
- */

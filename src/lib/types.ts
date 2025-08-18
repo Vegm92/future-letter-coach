@@ -170,6 +170,50 @@ export interface MilestoneListProps {
   letterId: string;
 }
 
+export interface LetterDetailProps {
+  letter: Letter;
+  onEdit: (letter: Letter) => void;
+  onDelete: (letter: Letter) => void;
+  onUpdateComments: (letter: Letter, comments: string) => Promise<void>;
+}
+
+export interface HeaderProps {
+  user?: any;
+  onCreateClick?: () => void;
+}
+
+export interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export interface FieldEnhancerProps {
+  field: 'title' | 'goal' | 'content';
+  value: string;
+  onApply: (enhancedValue: string) => void;
+  context?: {
+    title?: string;
+    goal?: string;
+    content?: string;
+  };
+  placeholder?: string;
+}
+
+export interface MilestoneManagerProps {
+  goal: string;
+  content: string;
+  title?: string;
+  initialMilestones?: MilestoneUIData[];
+  onChange: (milestones: MilestoneUIData[]) => void;
+}
+
+export interface MilestoneUIData {
+  id: string;
+  text: string;
+  dueDate: string;
+  isInferred?: boolean;
+  reasoning?: string;
+}
+
 // ============================================================================
 // MODAL & UI STATE TYPES
 // ============================================================================

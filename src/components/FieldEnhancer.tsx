@@ -1,35 +1,16 @@
-/**
- * FIELD ENHANCER
- * 
- * Shows a simple "Enhance" button for any field with content.
- * Provides AI suggestions with explanations in a clean UI.
- */
-
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, CheckCircle, X } from 'lucide-react';
 import { useEnhancement } from '../hooks/useEnhancement';
+import type { FieldEnhancerProps } from '../lib/types';
 
-interface FieldEnhancerProps {
-  field: 'title' | 'goal' | 'content';
-  value: string;
-  onApply: (enhancedValue: string) => void;
-  context?: {
-    title?: string;
-    goal?: string;
-    content?: string;
-  };
-  placeholder?: string;
-}
-
-export function FieldEnhancer({ field, value, onApply, context, placeholder }: FieldEnhancerProps) {
+function FieldEnhancerComponent({ field, value, onApply, context, placeholder }: FieldEnhancerProps) {
   const { enhanceField, isEnhancingField } = useEnhancement();
   const [suggestion, setSuggestion] = useState<{ suggestion: string; explanation: string } | null>(null);
   const [showSuggestion, setShowSuggestion] = useState(false);
 
-  // Show enhance button when there's any content
   const shouldShowEnhanceButton = () => {
     return value.trim().length > 0;
   };
@@ -47,7 +28,7 @@ export function FieldEnhancer({ field, value, onApply, context, placeholder }: F
       setSuggestion(response);
       setShowSuggestion(true);
     } catch (error) {
-      // Error already handled by hook
+      // Error handled by hook
     }
   };
 
@@ -70,7 +51,6 @@ export function FieldEnhancer({ field, value, onApply, context, placeholder }: F
 
   return (
     <div className="mt-2">
-      {/* Enhance Button */}
       {shouldShowEnhanceButton() && !showSuggestion && (
         <div className="flex justify-end">
           <Button
@@ -96,7 +76,6 @@ export function FieldEnhancer({ field, value, onApply, context, placeholder }: F
         </div>
       )}
 
-      {/* AI Suggestion */}
       {showSuggestion && suggestion && (
         <Card className="mt-2 border-emerald-200 bg-emerald-50">
           <CardContent className="p-4">
@@ -115,14 +94,12 @@ export function FieldEnhancer({ field, value, onApply, context, placeholder }: F
               </div>
             </div>
 
-            {/* Suggested content */}
             <div className="bg-white p-3 rounded border border-emerald-200 mb-3">
               <p className={`text-sm text-gray-800 ${field === 'content' ? 'whitespace-pre-wrap' : ''}`}>
                 {suggestion.suggestion}
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex items-center justify-between">
               <div className="text-xs text-emerald-600">
                 This will replace your current {field}
@@ -155,3 +132,13 @@ export function FieldEnhancer({ field, value, onApply, context, placeholder }: F
     </div>
   );
 }
+
+export const FieldEnhancer = memo(FieldEnhancerComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.value === nextProps.value && 
+    prevProps.field === nextProps.field &&
+    JSON.stringify(prevProps.context) === JSON.stringify(nextProps.context)
+  );
+});
+
+FieldEnhancer.displayName = 'FieldEnhancer';

@@ -9,10 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { supabase } from '../lib/supabase';
 import { Loader2 } from 'lucide-react';
-
-interface LayoutProps {
-  children: React.ReactNode;
-}
+import type { LayoutProps } from '../lib/types';
 
 export function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();

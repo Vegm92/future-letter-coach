@@ -1,10 +1,4 @@
-/**
- * SIMPLIFIED LETTER CARD
- * 
- * Clean, focused component that displays letter info.
- * No complex state management, just pure presentation + callbacks.
- */
-
+import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +25,7 @@ import {
 import { format, differenceInDays, parseISO } from 'date-fns';
 import type { Letter, LetterCardProps } from '../lib/types';
 
-export function LetterCard({ 
+function LetterCardComponent({ 
   letter, 
   onView, 
   onEdit, 
@@ -42,7 +36,6 @@ export function LetterCard({
   const daysUntilSend = differenceInDays(parseISO(letter.send_date), new Date());
   const isOverdue = daysUntilSend < 0 && letter.status === 'scheduled';
   
-  // Calculate progress from milestones
   const totalMilestones = letter.milestones?.length || 0;
   const completedMilestones = letter.milestones?.filter(m => m.completed).length || 0;
   const progress = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
@@ -89,11 +82,10 @@ export function LetterCard({
   };
 
   return (
-    <Card className="transition-all hover:shadow-md cursor-pointer group">
-      {/* Card Header */}
-      <CardHeader className="pb-3">
+    <Card data-section="letter-card" className="transition-all hover:shadow-md cursor-pointer group">
+      <CardHeader data-section="card-header" className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
+          <div data-section="card-title" className="flex-1 min-w-0">
             <CardTitle 
               className="text-base font-semibold truncate group-hover:text-primary transition-colors"
               onClick={() => onView(letter)}
@@ -113,9 +105,10 @@ export function LetterCard({
             </div>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div data-section="card-actions">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -160,22 +153,21 @@ export function LetterCard({
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
 
-      {/* Card Content */}
-      <CardContent className="space-y-4" onClick={() => onView(letter)}>
-        {/* Goal Preview */}
-        <div>
+      <CardContent data-section="card-content" className="space-y-4" onClick={() => onView(letter)}>
+        <div data-section="goal-preview">
           <p className="text-sm text-muted-foreground line-clamp-2">
             {letter.goal}
           </p>
         </div>
 
-        {/* Progress Section */}
-        {totalMilestones > 0 && (
-          <div className="space-y-2">
+        <div data-section="milestone-progress">
+          {totalMilestones > 0 && (
+            <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Progress</span>
               <span className="font-medium">{progress}%</span>
@@ -185,11 +177,11 @@ export function LetterCard({
               <Target className="h-3 w-3 mr-1" />
               <span>{completedMilestones} of {totalMilestones} milestones</span>
             </div>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
-        {/* Dates */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+        <div data-section="card-footer" className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />
             <span>Send: {format(parseISO(letter.send_date), 'MMM d, yyyy')}</span>
@@ -203,18 +195,15 @@ export function LetterCard({
   );
 }
 
-/**
- * COMPARISON TO OLD LETTERCARD:
- * 
- * OLD: Complex prop handling, inline state management, scattered logic
- * NEW: Simple props, clear presentation logic, consistent styling
- * 
- * OLD: Multiple different action handling patterns
- * NEW: Clean callback pattern with dropdown menu
- * 
- * OLD: Inconsistent status handling across components
- * NEW: Centralized status logic with clear visual feedback
- * 
- * OLD: Mixed concerns (presentation + business logic)
- * NEW: Pure presentation component
- */
+export const LetterCard = memo(LetterCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.letter.id === nextProps.letter.id &&
+    prevProps.letter.title === nextProps.letter.title &&
+    prevProps.letter.status === nextProps.letter.status &&
+    prevProps.letter.updated_at === nextProps.letter.updated_at &&
+    prevProps.letter.milestones?.length === nextProps.letter.milestones?.length
+  );
+});
+
+LetterCard.displayName = 'LetterCard';
+

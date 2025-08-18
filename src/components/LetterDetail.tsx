@@ -1,10 +1,3 @@
-/**
- * SIMPLIFIED LETTER DETAIL
- * 
- * Clean modal component that displays full letter details.
- * No complex state management, just presentation + callbacks.
- */
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,14 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import type { Letter } from '../lib/types';
-
-interface LetterDetailProps {
-  letter: Letter;
-  onEdit: (letter: Letter) => void;
-  onDelete: (letter: Letter) => void;
-  onUpdateComments: (letter: Letter, comments: string) => Promise<void>;
-}
+import type { LetterDetailProps } from '../lib/types';
 
 export function LetterDetail({ 
   letter, 
@@ -92,11 +78,10 @@ export function LetterDetail({
   );
 
   return (
-    <div className="space-y-6 max-h-[80vh] overflow-y-auto">
-      {/* Header */}
-      <div className="space-y-3">
+    <div data-section="letter-detail" className="space-y-6 max-h-[80vh] overflow-y-auto">
+      <div data-section="detail-header" className="space-y-3">
         <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
+          <div data-section="title-section" className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <h1 className="text-2xl font-bold leading-tight">
                 {hasEnhancement && letter.ai_enhanced_title && !showOriginalTitle
@@ -125,7 +110,7 @@ export function LetterDetail({
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div data-section="detail-actions" className="flex items-center gap-2">
             <Button onClick={() => onEdit(letter)} disabled={letter.is_locked}>
               <Edit className="h-4 w-4 mr-2" />
               {letter.is_locked ? 'Locked' : 'Edit'}
@@ -140,8 +125,7 @@ export function LetterDetail({
           </div>
         </div>
 
-        {/* Meta Information */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div data-section="metadata" className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center">
             <Calendar className="h-4 w-4 mr-1" />
             Send: {format(parseISO(letter.send_date), 'MMMM d, yyyy')}
@@ -155,8 +139,7 @@ export function LetterDetail({
 
       <Separator />
 
-      {/* Goal Section */}
-      <div className="space-y-3">
+      <div data-section="goal-section" className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold flex items-center">
             <Target className="h-5 w-5 mr-2" />
@@ -187,10 +170,10 @@ export function LetterDetail({
         </div>
       </div>
 
-      {/* Progress Section */}
-      {totalMilestones > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Progress Overview</h2>
+      <div data-section="progress-section">
+        {totalMilestones > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Progress Overview</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Progress</span>
@@ -201,11 +184,11 @@ export function LetterDetail({
               {completedMilestones} of {totalMilestones} milestones completed
             </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Letter Content */}
-      <div className="space-y-3">
+      <div data-section="content-section" className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Letter Content</h2>
           {hasEnhancement && letter.ai_enhanced_content && (
@@ -233,8 +216,7 @@ export function LetterDetail({
         </div>
       </div>
 
-      {/* Personal Comments */}
-      <div className="space-y-3">
+      <div data-section="comments-section" className="space-y-3">
         <h2 className="text-lg font-semibold">Personal Comments & Reflections</h2>
         <div className="space-y-3">
           <Label htmlFor="comments" className="sr-only">Personal Comments</Label>
@@ -273,18 +255,3 @@ export function LetterDetail({
   );
 }
 
-/**
- * COMPARISON TO OLD LETTERDETAIL:
- * 
- * OLD: 470+ lines with complex modal management, inline milestone editing
- * NEW: 250 lines focused on presentation and core functionality
- * 
- * OLD: Mixed concerns (modal state + content display + milestone management)
- * NEW: Pure content display with clear callbacks for actions
- * 
- * OLD: Complex enhancement toggle logic scattered throughout
- * NEW: Simple, consistent enhancement display pattern
- * 
- * OLD: Inline milestone management with separate component imports
- * NEW: Will delegate milestone management to parent or separate modal
- */

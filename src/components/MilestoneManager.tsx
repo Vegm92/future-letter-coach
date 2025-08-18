@@ -1,11 +1,4 @@
-/**
- * SMART MILESTONE MANAGER
- * 
- * Infers milestones from user's goal and content, then allows
- * manual refinement and addition of custom milestones.
- */
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,24 +17,9 @@ import {
 } from 'lucide-react';
 import { format, addDays, addMonths } from 'date-fns';
 import { useEnhancement } from '../hooks/useEnhancement';
+import type { MilestoneManagerProps, MilestoneUIData } from '../lib/types';
 
-interface Milestone {
-  id: string;
-  text: string;
-  dueDate: string;
-  isInferred?: boolean;
-  reasoning?: string;
-}
-
-interface MilestoneManagerProps {
-  goal: string;
-  content: string;
-  title?: string;
-  initialMilestones?: Milestone[];
-  onChange: (milestones: Milestone[]) => void;
-}
-
-export function MilestoneManager({ 
+function MilestoneManagerComponent({ 
   goal, 
   content, 
   title, 
@@ -49,22 +27,16 @@ export function MilestoneManager({
   onChange 
 }: MilestoneManagerProps) {
   const { inferMilestones, isInferringMilestones } = useEnhancement();
-  const [milestones, setMilestones] = useState<Milestone[]>(initialMilestones);
+  const [milestones, setMilestones] = useState<MilestoneUIData[]>(initialMilestones);
   const [inferredSuggestions, setInferredSuggestions] = useState<any[]>([]);
   const [showInferred, setShowInferred] = useState(false);
   const [newMilestoneText, setNewMilestoneText] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
 
-  // Auto-infer milestones when goal and content are substantial
   useEffect(() => {
     const shouldInfer = goal.trim().length > 20 && content.trim().length > 50;
     
-    // Only suggest if:
-    // 1. Content is substantial enough
-    // 2. No existing milestones
-    // 3. No previous suggestions shown
-    // 4. Haven't already attempted inference
     if (shouldInfer && 
         milestones.length === 0 && 
         inferredSuggestions.length === 0 && 
@@ -73,7 +45,6 @@ export function MilestoneManager({
     }
   }, [goal, content]);
 
-  // Notify parent of changes
   useEffect(() => {
     onChange(milestones);
   }, [milestones, onChange]);
@@ -86,22 +57,20 @@ export function MilestoneManager({
       setInferredSuggestions(response.suggestedMilestones);
       setShowInferred(true);
     } catch (error) {
-      // Error already handled by hook
+      // Error handled by hook
     }
   };
 
   const addInferredMilestone = (suggestion: any) => {
-    // Calculate a logical due date if not provided
     let dueDate = suggestion.dueDate;
     if (!dueDate) {
-      // If no due date provided, spread milestones over time based on existing ones
       const existingDates = milestones.map(m => new Date(m.dueDate)).sort((a, b) => a.getTime() - b.getTime());
       const baseDate = existingDates.length > 0 ? existingDates[existingDates.length - 1] : new Date();
       const nextDate = addMonths(baseDate, Math.max(1, Math.floor(3 + milestones.length * 0.5)));
       dueDate = format(nextDate, 'yyyy-MM-dd');
     }
     
-    const newMilestone: Milestone = {
+    const newMilestone: MilestoneUIData = {
       id: Date.now().toString(),
       text: suggestion.text,
       dueDate,
@@ -111,7 +80,6 @@ export function MilestoneManager({
 
     setMilestones(prev => [...prev, newMilestone]);
     
-    // Remove from suggestions
     setInferredSuggestions(prev => 
       prev.filter(s => s.text !== suggestion.text)
     );
@@ -120,12 +88,11 @@ export function MilestoneManager({
   const addManualMilestone = () => {
     if (!newMilestoneText.trim()) return;
 
-    // Calculate a logical due date for manual milestones
     const existingDates = milestones.map(m => new Date(m.dueDate)).sort((a, b) => a.getTime() - b.getTime());
     const baseDate = existingDates.length > 0 ? existingDates[existingDates.length - 1] : new Date();
     const nextDate = addMonths(baseDate, Math.max(1, Math.floor(1 + milestones.length * 0.3)));
     
-    const newMilestone: Milestone = {
+    const newMilestone: MilestoneUIData = {
       id: Date.now().toString(),
       text: newMilestoneText,
       dueDate: format(nextDate, 'yyyy-MM-dd'),
@@ -136,7 +103,7 @@ export function MilestoneManager({
     setNewMilestoneText('');
   };
 
-  const updateMilestone = (id: string, updates: Partial<Milestone>) => {
+  const updateMilestone = (id: string, updates: Partial<MilestoneUIData>) => {
     setMilestones(prev =>
       prev.map(m => m.id === id ? { ...m, ...updates } : m)
     );
@@ -146,7 +113,7 @@ export function MilestoneManager({
     setMilestones(prev => prev.filter(m => m.id !== id));
   };
 
-  const startEditing = (milestone: Milestone) => {
+  const startEditing = (milestone: MilestoneUIData) => {
     setEditingId(milestone.id);
     setEditingText(milestone.text);
   };
@@ -167,8 +134,8 @@ export function MilestoneManager({
   const canInfer = goal.trim().length > 10 && content.trim().length > 20;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div data-section="milestone-manager" className="space-y-4">
+      <div data-section="milestone-header" className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
           <span className="font-medium">Milestones</span>
@@ -179,7 +146,6 @@ export function MilestoneManager({
           )}
         </div>
 
-        {/* Infer button - only show if no milestones exist and no suggestions pending */}
         {canInfer && milestones.length === 0 && !showInferred && (
           <Button
             type="button"
@@ -203,7 +169,6 @@ export function MilestoneManager({
           </Button>
         )}
         
-        {/* Show re-suggest button if milestones exist but user wants new suggestions */}
         {canInfer && (milestones.length > 0 || (showInferred && (inferredSuggestions?.length || 0) === 0)) && (
           <Button
             type="button"
@@ -232,9 +197,9 @@ export function MilestoneManager({
         )}
       </div>
 
-      {/* Inferred Suggestions */}
-      {showInferred && inferredSuggestions.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+      <div data-section="inferred-suggestions">
+        {showInferred && inferredSuggestions.length > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb className="h-4 w-4 text-blue-600" />
@@ -278,12 +243,13 @@ export function MilestoneManager({
               </p>
             )}
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
+      </div>
 
-      {/* Current Milestones */}
-      {milestones.length > 0 && (
-        <div className="space-y-2">
+      <div data-section="milestone-list">
+        {milestones.length > 0 && (
+          <div className="space-y-2">
           {milestones.map((milestone) => (
             <div key={milestone.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
               <CheckCircle className="h-4 w-4 text-gray-400" />
@@ -374,11 +340,11 @@ export function MilestoneManager({
               </div>
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
-      {/* Add Manual Milestone */}
-      <div className="flex items-center gap-2 p-3 border border-dashed rounded-lg">
+      <div data-section="add-milestone" className="flex items-center gap-2 p-3 border border-dashed rounded-lg">
         <Plus className="h-4 w-4 text-gray-400" />
         <Input
           placeholder="Add a custom milestone..."
@@ -404,14 +370,27 @@ export function MilestoneManager({
         )}
       </div>
 
-      {milestones.length === 0 && !canInfer && (
-        <div className="text-center py-4 text-sm text-gray-500">
+      <div data-section="empty-state">
+        {milestones.length === 0 && !canInfer && (
+          <div className="text-center py-4 text-sm text-gray-500">
           <Target className="h-8 w-8 mx-auto mb-2 text-gray-300" />
           Add some goals and content above to get milestone suggestions,
           <br />
           or create custom milestones manually.
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+export const MilestoneManager = memo(MilestoneManagerComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.goal === nextProps.goal &&
+    prevProps.content === nextProps.content &&
+    prevProps.title === nextProps.title &&
+    prevProps.initialMilestones?.length === nextProps.initialMilestones?.length
+  );
+});
+
+MilestoneManager.displayName = 'MilestoneManager';
