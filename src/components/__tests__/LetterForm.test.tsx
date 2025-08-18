@@ -258,6 +258,79 @@ describe('LetterForm', () => {
   })
 
   describe('Form submission - Create letter', () => {
+    it('should create letter with valid data', async () => {
+      const user = userEvent.setup()
+      const mockLetter = {
+        id: 'new-letter-id',
+        title: 'Test Letter',
+        goal: 'Test Goal',
+        content: 'Test Content',
+        send_date: '2024-12-25',
+      }
+      mockCreateLetter.mockResolvedValue(mockLetter)
+
+      render(<LetterForm {...defaultProps} />)
+
+      await user.type(screen.getByLabelText(/letter title/i), 'Test Letter')
+      await user.type(screen.getByLabelText(/your goal/i), 'My specific goal for the future')
+      await user.type(screen.getByLabelText(/letter content/i), 'Dear Future Me, I am writing this letter to document my goals and aspirations.')
+      await user.clear(screen.getByLabelText(/send date/i))
+      await user.type(screen.getByLabelText(/send date/i), '2025-12-25')
+
+      await user.click(screen.getByRole('button', { name: /create letter/i }))
+
+      await waitFor(() => {
+        expect(mockCreateLetter).toHaveBeenCalledWith({
+          title: 'Test Letter',
+          goal: 'Test Goal',
+          content: 'Test Content',
+          send_date: '2024-12-25',
+        })
+        expect(mockOnSuccess).toHaveBeenCalledWith(mockLetter)
+      })
+    })
+
+    it('should create milestones after creating letter', async () => {
+      const user = userEvent.setup()
+      const mockLetter = {
+        id: 'new-letter-id',
+        title: 'Test Letter',
+        goal: 'Test Goal',
+        content: 'Test Content',
+        send_date: '2024-12-25',
+      }
+      mockCreateLetter.mockResolvedValue(mockLetter)
+      mockCreateMilestones.mockResolvedValue([])
+
+      render(<LetterForm {...defaultProps} />)
+
+      // Fill form
+      await user.type(screen.getByLabelText(/letter title/i), 'Test Letter')
+      await user.type(screen.getByLabelText(/your goal/i), 'My specific goal for the future')
+      await user.type(screen.getByLabelText(/letter content/i), 'Dear Future Me, I am writing this letter to document my goals and aspirations.')
+      await user.clear(screen.getByLabelText(/send date/i))
+      await user.type(screen.getByLabelText(/send date/i), '2025-12-25')
+
+      // Add a milestone
+      await user.click(screen.getByRole('button', { name: /add test milestone/i }))
+
+      // Submit form
+      await user.click(screen.getByRole('button', { name: /create letter/i }))
+
+      await waitFor(() => {
+        expect(mockCreateLetter).toHaveBeenCalled()
+        expect(mockCreateMilestones).toHaveBeenCalledWith([
+          {
+            letterId: 'new-letter-id',
+            title: 'Test milestone',
+            description: 'Test desc',
+            percentage: 0,
+            target_date: '2024-01-15',
+          },
+        ])
+      })
+    })
+
     it('should handle letter creation error', async () => {
       const user = userEvent.setup()
       mockCreateLetter.mockRejectedValue(new Error('Creation failed'))
@@ -315,6 +388,97 @@ describe('LetterForm', () => {
 
       expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /create letter/i })).not.toBeInTheDocument()
+    })
+
+    it('should update existing letter', async () => {
+      const user = userEvent.setup()
+      const updatedLetter = {
+        ...existingLetter,
+        title: 'Updated Letter Title',
+        goal: 'Updated Goal',
+        content: 'Updated Content',
+      }
+      mockUpdateLetter.mockResolvedValue(updatedLetter)
+
+      render(
+        <LetterForm 
+          {...defaultProps} 
+          letter={existingLetter}
+        />
+      )
+
+      // Update the title
+      const titleInput = screen.getByLabelText(/letter title/i)
+      await user.clear(titleInput)
+      await user.type(titleInput, 'Updated Letter Title')
+
+      // Update the goal
+      const goalInput = screen.getByLabelText(/your goal/i)
+      await user.clear(goalInput)
+      await user.type(goalInput, 'Updated Goal')
+
+      // Update the content
+      const contentInput = screen.getByLabelText(/letter content/i)
+      await user.clear(contentInput)
+      await user.type(contentInput, 'Updated Content')
+
+      // Submit form
+      await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+      await waitFor(() => {
+        expect(mockUpdateLetter).toHaveBeenCalledWith(existingLetter.id, {
+          title: 'Updated Letter Title',
+          goal: 'Updated Goal',
+          content: 'Updated Content',
+          send_date: existingLetter.send_date,
+        })
+        expect(mockOnSuccess).toHaveBeenCalledWith(updatedLetter)
+      })
+    })
+
+    it('should update milestones after updating letter', async () => {
+      const user = userEvent.setup()
+      const updatedLetter = { ...existingLetter, title: 'Updated Title' }
+      mockUpdateLetter.mockResolvedValue(updatedLetter)
+      mockUpdateMilestones.mockResolvedValue([])
+
+      render(
+        <LetterForm 
+          {...defaultProps} 
+          letter={existingLetter}
+        />
+      )
+
+      // Update the title slightly
+      const titleInput = screen.getByLabelText(/letter title/i)
+      await user.clear(titleInput)
+      await user.type(titleInput, 'Updated Title')
+
+      // Add a new milestone
+      await user.click(screen.getByRole('button', { name: /add test milestone/i }))
+
+      // Submit form
+      await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+      await waitFor(() => {
+        expect(mockUpdateLetter).toHaveBeenCalled()
+        expect(mockUpdateMilestones).toHaveBeenCalledWith(existingLetter.id, [
+          {
+            letterId: existingLetter.id,
+            title: 'Existing Milestone',
+            description: 'Existing desc',
+            percentage: 0,
+            target_date: '2024-01-15',
+          },
+          {
+            letterId: existingLetter.id,
+            title: 'Test milestone',
+            description: 'Test desc',
+            percentage: 0,
+            target_date: '2024-01-15',
+          },
+        ])
+      })
     })
 
   })
