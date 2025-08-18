@@ -12,12 +12,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Sparkles, Save, Plus, Loader2 } from 'lucide-react';
+import { Save, Plus, Loader2 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 
 import { useLetters } from '../hooks/useLetters';
-import { useEnhancement } from '../hooks/useEnhancement';
+import { useMilestones } from '../hooks/useMilestones';
 import type { Letter, CreateLetterData, UpdateLetterData } from '../lib/types';
+import { FieldEnhancer } from './FieldEnhancer';
+import { MilestoneManager } from './MilestoneManager';
 
 interface LetterFormProps {
   letter?: Letter; // undefined = create mode, defined = edit mode
@@ -28,7 +30,7 @@ interface LetterFormProps {
 export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
   const isEditMode = !!letter;
   const { createLetter, updateLetter } = useLetters();
-  const { enhance, isLoading: enhancing } = useEnhancement();
+  const { createMilestones, updateMilestones } = useMilestones();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -40,8 +42,7 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [enhancedData, setEnhancedData] = useState<any>(null);
-  const [showEnhanced, setShowEnhanced] = useState(false);
+  const [milestones, setMilestones] = useState<any[]>([]);
 
   // Update form when letter prop changes (for edit mode)
   useEffect(() => {
@@ -53,6 +54,17 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
         send_date: letter.send_date,
         personal_comments: letter.personal_comments || '',
       });
+      // Load existing milestones if in edit mode
+      if (letter.milestones) {
+        const existingMilestones = letter.milestones.map(m => ({
+          id: m.id,
+          text: m.title,
+          dueDate: m.target_date,
+          isInferred: false, // We don't track this in the database yet
+          reasoning: m.description || '',
+        }));
+        setMilestones(existingMilestones);
+      }
     }
   }, [letter]);
 
@@ -60,34 +72,7 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleEnhance = async () => {
-    if (!formData.title.trim() || !formData.goal.trim() || !formData.content.trim()) {
-      return; // Need basic content to enhance
-    }
-
-    try {
-      const response = await enhance({
-        title: formData.title,
-        goal: formData.goal,
-        content: formData.content,
-        send_date: formData.send_date,
-      });
-      
-      setEnhancedData(response);
-      setShowEnhanced(true);
-    } catch (error) {
-      // Error already handled by the hook
-    }
-  };
-
-  const applyEnhancement = (field: 'title' | 'goal' | 'content') => {
-    if (!enhancedData) return;
-    
-    const enhancedValue = 
-      field === 'title' ? enhancedData.enhancedTitle :
-      field === 'goal' ? enhancedData.enhancedGoal :
-      enhancedData.enhancedContent;
-
+  const handleFieldEnhancement = (field: keyof typeof formData, enhancedValue: string) => {
     setFormData(prev => ({ ...prev, [field]: enhancedValue }));
   };
 
@@ -112,14 +97,22 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
           personal_comments: formData.personal_comments,
         };
         
-        // Add enhanced data if we have it
-        if (enhancedData) {
-          updateData.ai_enhanced_title = enhancedData.enhancedTitle;
-          updateData.ai_enhanced_goal = enhancedData.enhancedGoal;
-          updateData.ai_enhanced_content = enhancedData.enhancedContent;
-        }
-        
         result = await updateLetter(letter.id, updateData);
+        
+        // Update milestones for existing letter
+        if (milestones.length > 0) {
+          const milestoneData = milestones.map(m => ({
+            letterId: result.id,
+            title: m.text,
+            description: m.reasoning || '',
+            percentage: 0, // Default percentage
+            target_date: m.dueDate,
+          }));
+          await updateMilestones(result.id, milestoneData);
+        } else {
+          // If no milestones, clear existing ones
+          await updateMilestones(result.id, []);
+        }
       } else {
         // Create new letter
         const createData: CreateLetterData = {
@@ -130,6 +123,18 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
         };
         
         result = await createLetter(createData);
+        
+        // Create milestones for new letter
+        if (milestones.length > 0) {
+          const milestoneData = milestones.map(m => ({
+            letterId: result.id,
+            title: m.text,
+            description: m.reasoning || '',
+            percentage: 0, // Default percentage
+            target_date: m.dueDate,
+          }));
+          await createMilestones(milestoneData);
+        }
       }
 
       onSuccess(result);
@@ -140,7 +145,6 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
     }
   };
 
-  const canEnhance = formData.title.trim() && formData.goal.trim() && formData.content.trim();
   const canSubmit = formData.title.trim() && formData.content.trim() && formData.goal.trim();
 
   return (
@@ -161,15 +165,24 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Letter Title *</Label>
-            <Input
-              id="title"
-              placeholder="e.g., My Fitness Journey"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="title">Letter Title *</Label>
+          <Input
+            id="title"
+            placeholder="e.g., My Fitness Journey"
+            value={formData.title}
+            onChange={(e) => handleInputChange('title', e.target.value)}
+          />
+          <FieldEnhancer
+            field="title"
+            value={formData.title}
+            onApply={(enhanced) => handleFieldEnhancement('title', enhanced)}
+            context={{
+              goal: formData.goal,
+              content: formData.content,
+            }}
+          />
+        </div>
 
           <div className="space-y-2">
             <Label htmlFor="send_date">Send Date *</Label>
@@ -192,6 +205,15 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
             onChange={(e) => handleInputChange('goal', e.target.value)}
             className="min-h-[80px]"
           />
+          <FieldEnhancer
+            field="goal"
+            value={formData.goal}
+            onApply={(enhanced) => handleFieldEnhancement('goal', enhanced)}
+            context={{
+              title: formData.title,
+              content: formData.content,
+            }}
+          />
         </div>
 
         <div className="space-y-2">
@@ -203,7 +225,25 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
             onChange={(e) => handleInputChange('content', e.target.value)}
             className="min-h-[120px]"
           />
+          <FieldEnhancer
+            field="content"
+            value={formData.content}
+            onApply={(enhanced) => handleFieldEnhancement('content', enhanced)}
+            context={{
+              title: formData.title,
+              goal: formData.goal,
+            }}
+          />
         </div>
+
+        {/* Smart Milestones Section */}
+        <MilestoneManager
+          goal={formData.goal}
+          content={formData.content}
+          title={formData.title}
+          initialMilestones={milestones}
+          onChange={setMilestones}
+        />
 
         {isEditMode && (
           <div className="space-y-2">
@@ -218,101 +258,6 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
           </div>
         )}
 
-        {/* AI Enhancement Section */}
-        <Separator />
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="font-medium">AI Enhancement</span>
-              {enhancedData && <Badge variant="secondary">Enhanced</Badge>}
-            </div>
-            <Button
-              type="button"
-              onClick={handleEnhance}
-              disabled={!canEnhance || enhancing}
-              variant="outline"
-              size="sm"
-            >
-              {enhancing ? (
-                <>
-                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
-                  Enhancing...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-3 w-3 mr-2" />
-                  Enhance with AI
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Enhanced Content Display */}
-          {enhancedData && showEnhanced && (
-            <div className="space-y-3 p-4 border rounded-lg bg-muted/20">
-              <h4 className="font-medium text-sm">AI Suggestions:</h4>
-              
-              {/* Enhanced Title */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">Enhanced Title</Label>
-                  <Button
-                    type="button"
-                    onClick={() => applyEnhancement('title')}
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs"
-                  >
-                    Apply
-                  </Button>
-                </div>
-                <p className="text-sm bg-background p-2 rounded border">
-                  {enhancedData.enhancedTitle}
-                </p>
-              </div>
-
-              {/* Enhanced Goal */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">Enhanced Goal</Label>
-                  <Button
-                    type="button"
-                    onClick={() => applyEnhancement('goal')}
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs"
-                  >
-                    Apply
-                  </Button>
-                </div>
-                <p className="text-sm bg-background p-2 rounded border">
-                  {enhancedData.enhancedGoal}
-                </p>
-              </div>
-
-              {/* Enhanced Content */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">Enhanced Content</Label>
-                  <Button
-                    type="button"
-                    onClick={() => applyEnhancement('content')}
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs"
-                  >
-                    Apply
-                  </Button>
-                </div>
-                <p className="text-sm bg-background p-2 rounded border whitespace-pre-wrap">
-                  {enhancedData.enhancedContent}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Form Actions */}
         <div className="flex items-center justify-between pt-4 border-t">

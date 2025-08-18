@@ -92,6 +92,7 @@ export interface UpdateLetterData {
 // AI ENHANCEMENT TYPES
 // ============================================================================
 
+// Legacy bulk enhancement (keeping for backward compatibility)
 export interface EnhancementRequest {
   title: string;
   goal: string;
@@ -104,6 +105,38 @@ export interface EnhancementResponse {
   enhancedGoal: string;
   enhancedContent: string;
   suggestedMilestones: SuggestedMilestone[];
+}
+
+// New progressive enhancement types
+export interface FieldEnhancementRequest {
+  field: 'title' | 'goal' | 'content';
+  value: string;
+  context?: {
+    title?: string;
+    goal?: string;
+    content?: string;
+  };
+}
+
+export interface FieldEnhancementResponse {
+  suggestion: string;
+  explanation: string;
+}
+
+export interface MilestoneInferenceRequest {
+  goal: string;
+  content: string;
+  title?: string;
+}
+
+export interface MilestoneInferenceResponse {
+  suggestedMilestones: InferredMilestone[];
+}
+
+export interface InferredMilestone {
+  text: string;
+  reasoning: string;
+  dueDate?: string;
 }
 
 export interface SuggestedMilestone {

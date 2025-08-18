@@ -1,39 +1,35 @@
 /**
- * SIMPLIFIED ENHANCEMENT HOOK
+ * PROGRESSIVE ENHANCEMENT HOOK
  * 
- * Direct Supabase Edge Function calls.
- * No complex service layers or state management.
+ * Supports individual field enhancement and milestone inference.
+ * More thoughtful, step-by-step user experience.
  */
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import type { EnhancementRequest, EnhancementResponse, UseEnhancementReturn } from '../lib/types';
+import type { 
+  FieldEnhancementRequest, 
+  FieldEnhancementResponse, 
+  MilestoneInferenceRequest, 
+  MilestoneInferenceResponse 
+} from '../lib/types';
 
-export function useEnhancement(): UseEnhancementReturn {
+
+export function useEnhancement() {
   const { toast } = useToast();
 
-  const enhancementMutation = useMutation({
-    mutationFn: async (data: EnhancementRequest): Promise<EnhancementResponse> => {
-      const { data: response, error } = await supabase.functions.invoke('enhance-letter-complete', {
+  // Individual field enhancement
+  const fieldEnhancementMutation = useMutation({
+    mutationFn: async (data: FieldEnhancementRequest): Promise<FieldEnhancementResponse> => {
+      const { data: response, error } = await supabase.functions.invoke('enhance-field', {
         body: data,
       });
 
       if (error) throw error;
       
-      // Transform response to match our types
-      return {
-        enhancedTitle: response.enhancedLetter.title,
-        enhancedGoal: response.enhancedLetter.goal,
-        enhancedContent: response.enhancedLetter.content,
-        suggestedMilestones: response.suggestedMilestones || [],
-      };
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Letter Enhanced',
-        description: 'AI has provided suggestions to improve your letter.',
-      });
+      // The response comes wrapped in the standard format from the edge function
+      return response.data;
     },
     onError: (error) => {
       toast({
@@ -44,9 +40,37 @@ export function useEnhancement(): UseEnhancementReturn {
     },
   });
 
+  // Milestone inference
+  const milestoneInferenceMutation = useMutation({
+    mutationFn: async (data: MilestoneInferenceRequest): Promise<MilestoneInferenceResponse> => {
+      const { data: response, error } = await supabase.functions.invoke('infer-milestones', {
+        body: data,
+      });
+
+      if (error) throw error;
+      
+      // The response comes wrapped in the standard format from the edge function
+      return response.data;
+    },
+    onError: (error) => {
+      toast({
+        title: 'Milestone inference failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
-    enhance: enhancementMutation.mutateAsync,
-    isLoading: enhancementMutation.isPending,
-    error: enhancementMutation.error?.message,
+    // Individual field enhancement
+    enhanceField: fieldEnhancementMutation.mutateAsync,
+    isEnhancingField: fieldEnhancementMutation.isPending,
+    
+    // Milestone inference
+    inferMilestones: milestoneInferenceMutation.mutateAsync,
+    isInferringMilestones: milestoneInferenceMutation.isPending,
+    
+    // Overall loading state
+    isLoading: fieldEnhancementMutation.isPending || milestoneInferenceMutation.isPending,
   };
 }
