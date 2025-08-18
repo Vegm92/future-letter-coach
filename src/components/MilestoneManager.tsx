@@ -204,7 +204,7 @@ export function MilestoneManager({
         )}
         
         {/* Show re-suggest button if milestones exist but user wants new suggestions */}
-        {canInfer && (milestones.length > 0 || (showInferred && inferredSuggestions.length === 0)) && (
+        {canInfer && (milestones.length > 0 || (showInferred && (inferredSuggestions?.length || 0) === 0)) && (
           <Button
             type="button"
             onClick={() => {
@@ -321,14 +321,16 @@ export function MilestoneManager({
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-gray-900">
-                      {milestone.text}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        {milestone.text}
+                      </span>
                       {milestone.isInferred && (
-                        <Badge variant="secondary" className="ml-2 text-xs">
+                        <Badge variant="secondary" className="text-xs">
                           AI
                         </Badge>
                       )}
-                    </p>
+                    </div>
                     {milestone.reasoning && (
                       <p className="text-xs text-gray-500 mt-1">
                         {milestone.reasoning}
