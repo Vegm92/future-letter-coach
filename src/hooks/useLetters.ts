@@ -165,12 +165,12 @@ export function useLetters(): UseLettersReturn {
   };
 
   return {
-    letters,
-    isLoading,
+    letters: letters || [],
+    isLoading: isLoading || false,
     error: error?.message,
     createLetter,
     updateLetter,
     deleteLetter,
-    refetch,
+    refetch: refetch || (() => {}),
   };
 }

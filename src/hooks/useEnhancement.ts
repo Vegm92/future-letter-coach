@@ -12,11 +12,12 @@ import type {
   FieldEnhancementRequest, 
   FieldEnhancementResponse, 
   MilestoneInferenceRequest, 
-  MilestoneInferenceResponse 
+  MilestoneInferenceResponse,
+  UseEnhancementReturn
 } from '../lib/types';
 
 
-export function useEnhancement() {
+export function useEnhancement(): UseEnhancementReturn {
   const { toast } = useToast();
 
   // Individual field enhancement
@@ -28,8 +29,8 @@ export function useEnhancement() {
 
       if (error) throw error;
       
-      // The response comes wrapped in the standard format from the edge function
-      return response.data;
+      // Handle both wrapped and direct responses from the edge function
+      return response?.data || response;
     },
     onError: (error) => {
       toast({
@@ -49,8 +50,8 @@ export function useEnhancement() {
 
       if (error) throw error;
       
-      // The response comes wrapped in the standard format from the edge function
-      return response.data;
+      // Handle both wrapped and direct responses from the edge function
+      return response?.data || response;
     },
     onError: (error) => {
       toast({
@@ -64,13 +65,16 @@ export function useEnhancement() {
   return {
     // Individual field enhancement
     enhanceField: fieldEnhancementMutation.mutateAsync,
-    isEnhancingField: fieldEnhancementMutation.isPending,
+    isEnhancingField: fieldEnhancementMutation.isPending || false,
     
     // Milestone inference
     inferMilestones: milestoneInferenceMutation.mutateAsync,
-    isInferringMilestones: milestoneInferenceMutation.isPending,
+    isInferringMilestones: milestoneInferenceMutation.isPending || false,
     
     // Overall loading state
-    isLoading: fieldEnhancementMutation.isPending || milestoneInferenceMutation.isPending,
+    isLoading: fieldEnhancementMutation.isPending || milestoneInferenceMutation.isPending || false,
+    
+    // Error handling
+    error: fieldEnhancementMutation.error?.message || milestoneInferenceMutation.error?.message,
   };
 }

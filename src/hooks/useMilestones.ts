@@ -8,7 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase, getCurrentUser } from '../lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import type { Milestone, CreateMilestoneData } from '../lib/types';
+import type { Milestone, CreateMilestoneData, UseMilestonesReturn } from '../lib/types';
 
 const LETTERS_QUERY_KEY = 'letters';
 
@@ -16,7 +16,7 @@ interface CreateMilestoneWithLetterData extends CreateMilestoneData {
   letterId: string;
 }
 
-export function useMilestones() {
+export function useMilestones(): UseMilestonesReturn {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -126,9 +126,37 @@ export function useMilestones() {
     return updateMilestonesMutation.mutateAsync({ letterId, milestones });
   };
 
+  // Individual milestone operations (to match the interface)
+  const createMilestone = async (data: CreateMilestoneData & { letterId: string }): Promise<Milestone> => {
+    const result = await createMilestones([data]);
+    return result[0];
+  };
+
+  const updateMilestone = async (id: string, data: Partial<CreateMilestoneData>): Promise<Milestone> => {
+    // This is a simplified implementation - in reality you'd need to implement single milestone update
+    throw new Error('Individual milestone update not yet implemented');
+  };
+
+  const deleteMilestone = async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('milestones')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  };
+
   return {
+    // Interface-compatible methods
+    milestones: [], // This hook doesn't fetch milestones - they come via letters
+    isLoading: createMilestonesMutation.isPending || updateMilestonesMutation.isPending || false,
+    error: createMilestonesMutation.error?.message || updateMilestonesMutation.error?.message,
+    createMilestone,
+    updateMilestone,
+    deleteMilestone,
+    
+    // Additional methods for batch operations
     createMilestones,
     updateMilestones,
-    isLoading: createMilestonesMutation.isPending || updateMilestonesMutation.isPending,
   };
 }

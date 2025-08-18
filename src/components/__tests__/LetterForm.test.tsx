@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@/test/utils'
 import userEvent from '@testing-library/user-event'
 import { LetterForm } from '../LetterForm'
 import type { Letter } from '../../types/supabase'
+import { format, addDays, addMonths } from 'date-fns'
 
 // Mock the hooks
 const mockCreateLetter = vi.fn()
@@ -44,8 +45,9 @@ vi.mock('../MilestoneManager', () => ({
     let testMilestones = initialMilestones || [];
     
     const addMilestone = () => {
+      const futureDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
       const newMilestones = [...testMilestones, 
-        { id: '1', text: 'Test milestone', reasoning: 'Test desc', dueDate: '2024-01-15' }
+        { id: '1', text: 'Test milestone', reasoning: 'Test desc', dueDate: futureDate }
       ];
       testMilestones = newMilestones;
       onChange && onChange(newMilestones);
@@ -175,10 +177,11 @@ describe('LetterForm', () => {
       render(<LetterForm {...defaultProps} />)
 
       const dateInput = screen.getByLabelText(/send date/i)
+      const futureDate = format(addDays(new Date(), 60), 'yyyy-MM-dd')
       await user.clear(dateInput)
-      await user.type(dateInput, '2024-12-25')
+      await user.type(dateInput, futureDate)
 
-      expect(dateInput).toHaveValue('2024-12-25')
+      expect(dateInput).toHaveValue(futureDate)
     })
   })
 
@@ -260,12 +263,13 @@ describe('LetterForm', () => {
   describe('Form submission - Create letter', () => {
     it('should create letter with valid data', async () => {
       const user = userEvent.setup()
+      const futureDate = format(addDays(new Date(), 60), 'yyyy-MM-dd')
       const mockLetter = {
         id: 'new-letter-id',
         title: 'Test Letter',
         goal: 'Test Goal',
         content: 'Test Content',
-        send_date: '2024-12-25',
+        send_date: futureDate,
       }
       mockCreateLetter.mockResolvedValue(mockLetter)
 
@@ -274,17 +278,18 @@ describe('LetterForm', () => {
       await user.type(screen.getByLabelText(/letter title/i), 'Test Letter')
       await user.type(screen.getByLabelText(/your goal/i), 'My specific goal for the future')
       await user.type(screen.getByLabelText(/letter content/i), 'Dear Future Me, I am writing this letter to document my goals and aspirations.')
+      const formFutureDate = format(addDays(new Date(), 60), 'yyyy-MM-dd')
       await user.clear(screen.getByLabelText(/send date/i))
-      await user.type(screen.getByLabelText(/send date/i), '2025-12-25')
+      await user.type(screen.getByLabelText(/send date/i), formFutureDate)
 
       await user.click(screen.getByRole('button', { name: /create letter/i }))
 
       await waitFor(() => {
         expect(mockCreateLetter).toHaveBeenCalledWith({
           title: 'Test Letter',
-          goal: 'Test Goal',
-          content: 'Test Content',
-          send_date: '2024-12-25',
+          goal: 'My specific goal for the future',
+          content: 'Dear Future Me, I am writing this letter to document my goals and aspirations.',
+          send_date: formFutureDate,
         })
         expect(mockOnSuccess).toHaveBeenCalledWith(mockLetter)
       })
@@ -292,12 +297,14 @@ describe('LetterForm', () => {
 
     it('should create milestones after creating letter', async () => {
       const user = userEvent.setup()
+      const formFutureDate = format(addDays(new Date(), 60), 'yyyy-MM-dd')
+      const milestoneFutureDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd')
       const mockLetter = {
         id: 'new-letter-id',
         title: 'Test Letter',
         goal: 'Test Goal',
         content: 'Test Content',
-        send_date: '2024-12-25',
+        send_date: formFutureDate,
       }
       mockCreateLetter.mockResolvedValue(mockLetter)
       mockCreateMilestones.mockResolvedValue([])
@@ -309,7 +316,7 @@ describe('LetterForm', () => {
       await user.type(screen.getByLabelText(/your goal/i), 'My specific goal for the future')
       await user.type(screen.getByLabelText(/letter content/i), 'Dear Future Me, I am writing this letter to document my goals and aspirations.')
       await user.clear(screen.getByLabelText(/send date/i))
-      await user.type(screen.getByLabelText(/send date/i), '2025-12-25')
+      await user.type(screen.getByLabelText(/send date/i), formFutureDate)
 
       // Add a milestone
       await user.click(screen.getByRole('button', { name: /add test milestone/i }))
@@ -325,7 +332,7 @@ describe('LetterForm', () => {
             title: 'Test milestone',
             description: 'Test desc',
             percentage: 0,
-            target_date: '2024-01-15',
+            target_date: milestoneFutureDate,
           },
         ])
       })
@@ -333,15 +340,16 @@ describe('LetterForm', () => {
 
     it('should handle letter creation error', async () => {
       const user = userEvent.setup()
+      const formFutureDate = format(addDays(new Date(), 60), 'yyyy-MM-dd')
       mockCreateLetter.mockRejectedValue(new Error('Creation failed'))
 
       render(<LetterForm {...defaultProps} />)
 
       await user.type(screen.getByLabelText(/letter title/i), 'Test Letter')
-      await user.type(screen.getByLabelText(/your goal/i), 'Test Goal')
-      await user.type(screen.getByLabelText(/letter content/i), 'Test Content')
+      await user.type(screen.getByLabelText(/your goal/i), 'My specific goal for the future')
+      await user.type(screen.getByLabelText(/letter content/i), 'This is a long test content for the letter')
       await user.clear(screen.getByLabelText(/send date/i))
-      await user.type(screen.getByLabelText(/send date/i), '2024-12-25')
+      await user.type(screen.getByLabelText(/send date/i), formFutureDate)
 
       await user.click(screen.getByRole('button', { name: /create letter/i }))
 
@@ -352,14 +360,16 @@ describe('LetterForm', () => {
   })
 
   describe('Form submission - Update letter', () => {
+    const existingLetterSendDate = format(addDays(new Date(), 30), 'yyyy-MM-dd')
+    const existingMilestoneDate = format(addMonths(new Date(), 2), 'yyyy-MM-dd')
     const existingLetter: Partial<Letter> = {
       id: 'letter-1',
       title: 'Existing Letter',
       goal: 'Existing Goal',
       content: 'Existing Content',
-      send_date: '2024-01-01',
+      send_date: existingLetterSendDate,
       milestones: [
-        { id: 'milestone-1', title: 'Existing Milestone', description: 'Existing desc', target_date: '2024-01-15', percentage: 0, letter_id: 'letter-1' }
+        { id: 'milestone-1', title: 'Existing Milestone', description: 'Existing desc', target_date: existingMilestoneDate, percentage: 0, letter_id: 'letter-1' }
       ]
     }
 
@@ -374,7 +384,7 @@ describe('LetterForm', () => {
       expect(screen.getByDisplayValue('Existing Letter')).toBeInTheDocument()
       expect(screen.getByDisplayValue('Existing Goal')).toBeInTheDocument()
       expect(screen.getByDisplayValue('Existing Content')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('2024-01-01')).toBeInTheDocument()
+      expect(screen.getByDisplayValue(existingLetterSendDate)).toBeInTheDocument()
       expect(screen.getByText('Milestones: 1')).toBeInTheDocument()
     })
 
@@ -438,6 +448,7 @@ describe('LetterForm', () => {
 
     it('should update milestones after updating letter', async () => {
       const user = userEvent.setup()
+      const newMilestoneDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd')
       const updatedLetter = { ...existingLetter, title: 'Updated Title' }
       mockUpdateLetter.mockResolvedValue(updatedLetter)
       mockUpdateMilestones.mockResolvedValue([])
@@ -468,14 +479,14 @@ describe('LetterForm', () => {
             title: 'Existing Milestone',
             description: 'Existing desc',
             percentage: 0,
-            target_date: '2024-01-15',
+            target_date: existingMilestoneDate,
           },
           {
             letterId: existingLetter.id,
             title: 'Test milestone',
             description: 'Test desc',
             percentage: 0,
-            target_date: '2024-01-15',
+            target_date: newMilestoneDate,
           },
         ])
       })

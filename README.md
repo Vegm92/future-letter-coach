@@ -116,6 +116,14 @@ The app will be available at [http://localhost:5173](http://localhost:5173) (def
 - `npm run build` — Build the app for production
 - `npm run preview` — Preview the production build
 - `npm run lint` — Lint the codebase
+- `npm run test` — Run the test suite
+
+## Testing
+
+See [TESTING_GUIDELINES.md](./TESTING_GUIDELINES.md) for our testing philosophy and patterns. Key principles:
+- Focus on **interface testing** for hooks
+- Use **dynamic dates** to avoid time-dependent failures  
+- Keep mocks **simple** and avoid complex dependency mocking
 
 ---
 

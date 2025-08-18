@@ -2,54 +2,18 @@ import '@testing-library/jest-dom'
 import { expect, afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
-// Global test setup
+// Reset after each test
 afterEach(() => {
   cleanup()
 })
 
-// Mock Supabase
-vi.mock('@/shared/config/client', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn(() => Promise.resolve({ data: { session: null }, error: null })),
-      getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-      onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
-      signUp: vi.fn(),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-    },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-      single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    })),
+// Set environment variables for Supabase in tests
+Object.defineProperty(import.meta, 'env', {
+  value: {
+    VITE_SUPABASE_URL: 'https://mock-project.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'mock-anon-key',
   },
-}))
-
-// Mock React Query
-vi.mock('@tanstack/react-query', async () => {
-  const actual = await vi.importActual('@tanstack/react-query')
-  return {
-    ...actual,
-    useQuery: vi.fn(() => ({
-      data: undefined,
-      error: null,
-      isLoading: false,
-      isError: false,
-    })),
-    useMutation: vi.fn(() => ({
-      mutate: vi.fn(),
-      mutateAsync: vi.fn(),
-      isLoading: false,
-      isError: false,
-      error: null,
-    })),
-  }
+  configurable: true
 })
 
 // Mock React Router

@@ -5,6 +5,7 @@ import { createElement } from 'react'
 import { useLetters } from '../useLetters'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import { createMockLetter, createMockUser } from '../../test/utils'
+import { format, addDays, addMonths } from 'date-fns'
 
 // Mock dependencies
 vi.mock('../../lib/supabase', () => ({
@@ -120,7 +121,7 @@ describe('useLetters', () => {
         title: 'New Letter',
         goal: 'Test Goal',
         content: 'Test Content',
-        send_date: '2024-12-31',
+        send_date: format(addDays(new Date(), 90), 'yyyy-MM-dd'),
       }
 
       const createdLetter = await result.current.createLetter(createData)
@@ -224,7 +225,7 @@ describe('useLetters', () => {
           title: 'Test',
           goal: 'Test',
           content: 'Test',
-          send_date: '2024-12-31',
+          send_date: format(addDays(new Date(), 90), 'yyyy-MM-dd'),
         })
       ).rejects.toThrow('Failed to create letter')
     })
@@ -262,7 +263,7 @@ describe('useLetters', () => {
           title: 'Test',
           goal: 'Test',
           content: 'Test',
-          send_date: '2024-12-31',
+          send_date: format(addDays(new Date(), 90), 'yyyy-MM-dd'),
         })
       ).rejects.toThrow('Not authenticated')
     })

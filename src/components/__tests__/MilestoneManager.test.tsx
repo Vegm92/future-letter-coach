@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/utils'
 import userEvent from '@testing-library/user-event'
 import { MilestoneManager } from '../MilestoneManager'
-
+import { createMockMilestone } from '@/test/utils'
+import { format, addDays, addMonths } from 'date-fns'
 // Mock the hooks
 const mockInferMilestones = vi.fn()
 
@@ -125,9 +126,11 @@ describe('MilestoneManager', () => {
 
   describe('Displaying existing milestones', () => {
     it('should render existing milestones correctly', () => {
+      const milestone1Date = format(addDays(new Date(), 30), 'yyyy-MM-dd')
+      const milestone2Date = format(addDays(new Date(), 60), 'yyyy-MM-dd')
       const existingMilestones = [
-        { id: '1', text: 'Learn HTML', dueDate: '2024-01-15', isInferred: false },
-        { id: '2', text: 'Learn CSS', dueDate: '2024-02-15', isInferred: true },
+        { id: '1', text: 'Learn HTML', dueDate: milestone1Date, isInferred: false },
+        { id: '2', text: 'Learn CSS', dueDate: milestone2Date, isInferred: true },
       ]
 
       render(
@@ -136,13 +139,14 @@ describe('MilestoneManager', () => {
 
       expect(screen.getByText('Learn HTML')).toBeInTheDocument()
       expect(screen.getByText('Learn CSS')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('2024-01-15')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('2024-02-15')).toBeInTheDocument()
+      expect(screen.getByDisplayValue(milestone1Date)).toBeInTheDocument()
+      expect(screen.getByDisplayValue(milestone2Date)).toBeInTheDocument()
     })
 
     it('should not show suggest button when milestones already exist', () => {
+      const milestoneDate = format(addDays(new Date(), 30), 'yyyy-MM-dd')
       const existingMilestones = [
-        { id: '1', text: 'Existing milestone', dueDate: '2024-01-15', isInferred: false }
+        { id: '1', text: 'Existing milestone', dueDate: milestoneDate, isInferred: false }
       ]
 
       render(

@@ -269,7 +269,10 @@ export interface UseMilestonesReturn {
 }
 
 export interface UseEnhancementReturn {
-  enhance: (data: EnhancementRequest) => Promise<EnhancementResponse>;
+  enhanceField: (data: FieldEnhancementRequest) => Promise<FieldEnhancementResponse>;
+  inferMilestones: (data: MilestoneInferenceRequest) => Promise<MilestoneInferenceResponse>;
+  isEnhancingField: boolean;
+  isInferringMilestones: boolean;
   isLoading: boolean;
   error?: string;
 }

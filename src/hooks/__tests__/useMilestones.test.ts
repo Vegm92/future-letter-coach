@@ -5,6 +5,7 @@ import { createElement } from 'react'
 import { useMilestones } from '../useMilestones'
 import { supabase, getCurrentUser } from '../../lib/supabase'
 import { createMockMilestone, createMockUser } from '../../test/utils'
+import { format, addDays, addMonths } from 'date-fns'
 
 // Mock dependencies
 vi.mock('../../lib/supabase', () => ({
@@ -82,7 +83,7 @@ describe('useMilestones', () => {
           title: 'Test Milestone',
           description: 'Test description',
           percentage: 50,
-          target_date: '2024-06-01',
+          target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
         },
       ]
 
@@ -94,7 +95,7 @@ describe('useMilestones', () => {
           title: 'Test Milestone',
           description: 'Test description',
           percentage: 50,
-          target_date: '2024-06-01',
+          target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
           letter_id: letterId,
           completed: false,
         },
@@ -134,7 +135,7 @@ describe('useMilestones', () => {
             title: 'Test',
             description: 'Test',
             percentage: 0,
-            target_date: '2024-06-01',
+            target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
           },
         ])
       ).rejects.toThrow('Failed to create milestones')
@@ -153,7 +154,7 @@ describe('useMilestones', () => {
             title: 'Test',
             description: 'Test',
             percentage: 0,
-            target_date: '2024-06-01',
+            target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
           },
         ])
       ).rejects.toThrow('Not authenticated')
@@ -191,7 +192,7 @@ describe('useMilestones', () => {
           title: 'Updated Milestone',
           description: 'Updated description',
           percentage: 75,
-          target_date: '2024-07-01',
+          target_date: format(addMonths(new Date(), 7), 'yyyy-MM-dd'),
         },
       ]
 
@@ -207,7 +208,7 @@ describe('useMilestones', () => {
           title: 'Updated Milestone',
           description: 'Updated description',
           percentage: 75,
-          target_date: '2024-07-01',
+          target_date: format(addMonths(new Date(), 7), 'yyyy-MM-dd'),
           letter_id: letterId,
           completed: false,
         },
@@ -262,7 +263,7 @@ describe('useMilestones', () => {
             title: 'Test',
             description: 'Test',
             percentage: 0,
-            target_date: '2024-06-01',
+            target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
           },
         ])
       ).rejects.toThrow('Failed to delete milestones')
@@ -300,7 +301,7 @@ describe('useMilestones', () => {
             title: 'Test',
             description: 'Test',
             percentage: 0,
-            target_date: '2024-06-01',
+            target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
           },
         ])
       ).rejects.toThrow('Failed to insert milestones')
@@ -335,7 +336,7 @@ describe('useMilestones', () => {
           title: 'Test',
           description: 'Test',
           percentage: 0,
-          target_date: '2024-06-01',
+          target_date: format(addMonths(new Date(), 6), 'yyyy-MM-dd'),
         },
       ])
 

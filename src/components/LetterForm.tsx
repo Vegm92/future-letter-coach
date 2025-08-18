@@ -97,9 +97,24 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
           content: data.content,
           goal: data.goal,
           send_date: data.send_date,
-          personal_comments: data.personal_comments,
         };
+        // Only include personal_comments if it's not empty
+        if (data.personal_comments && data.personal_comments.trim() !== '') {
+          updateData.personal_comments = data.personal_comments;
+        }
         result = await updateLetter(letter.id, updateData);
+        
+        // Update milestones if there are any changes
+        if (milestones.length > 0) {
+          const milestonesWithLetterId = milestones.map(milestone => ({
+            letterId: letter.id,
+            title: milestone.text || milestone.title,
+            description: milestone.reasoning || milestone.description || '',
+            percentage: milestone.percentage || 0,
+            target_date: milestone.dueDate || milestone.target_date,
+          }));
+          await updateMilestones(letter.id, milestonesWithLetterId);
+        }
       } else {
         const createData: CreateLetterData = {
           title: data.title,
@@ -108,6 +123,18 @@ export function LetterForm({ letter, onClose, onSuccess }: LetterFormProps) {
           send_date: data.send_date,
         };
         result = await createLetter(createData);
+        
+        // Create milestones if there are any
+        if (milestones.length > 0) {
+          const milestonesWithLetterId = milestones.map(milestone => ({
+            letterId: result.id,
+            title: milestone.text || milestone.title,
+            description: milestone.reasoning || milestone.description || '',
+            percentage: milestone.percentage || 0,
+            target_date: milestone.dueDate || milestone.target_date,
+          }));
+          await createMilestones(milestonesWithLetterId);
+        }
       }
 
       onSuccess(result);

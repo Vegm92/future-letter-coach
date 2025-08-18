@@ -3,6 +3,7 @@ import { render, screen } from '@/test/utils'
 import userEvent from '@testing-library/user-event'
 import { LetterCard } from '@/components/LetterCard'
 import { createMockLetter, createMockMilestone } from '@/test/utils'
+import { format, addDays, addMonths } from 'date-fns'
 
 describe('LetterCard', () => {
   const mockHandlers = {
@@ -31,23 +32,28 @@ describe('LetterCard', () => {
     })
 
     it('renders send date in correct format', () => {
+      const futureSendDate = format(addDays(new Date(), 90), "yyyy-MM-dd'T'HH:mm:ss'Z'")
       const mockLetter = createMockLetter({
-        send_date: '2024-12-31T00:00:00Z',
+        send_date: futureSendDate,
       })
 
       render(<LetterCard letter={mockLetter} {...mockHandlers} />)
 
-      expect(screen.getByText(/Dec 31, 2024/)).toBeInTheDocument()
+      // Check that the date is rendered in the expected format
+      const expectedDateText = format(addDays(new Date(), 90), 'MMM dd, yyyy')
+      expect(screen.getByText(new RegExp(expectedDateText))).toBeInTheDocument()
     })
 
     it('renders creation date in correct format', () => {
+      const pastCreationDate = format(addDays(new Date(), -30), "yyyy-MM-dd'T'HH:mm:ss'Z'")
       const mockLetter = createMockLetter({
-        created_at: '2024-01-15T10:30:00Z',
+        created_at: pastCreationDate,
       })
 
       render(<LetterCard letter={mockLetter} {...mockHandlers} />)
 
-      expect(screen.getByText(/Jan 15/)).toBeInTheDocument()
+      const expectedDateText = format(addDays(new Date(), -30), 'MMM dd')
+      expect(screen.getByText(new RegExp(expectedDateText))).toBeInTheDocument()
     })
   })
 
